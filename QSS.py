@@ -3,13 +3,13 @@ import matplotlib.pyplot as plt
 from scipy.linalg import expm
 
 
-TN=3   #nonlinear time
-TD=500  #dispersion time
+TN=2.33   #nonlinear time
+TD=1600  #dispersion time
 G=0.01 #loss rate
 
 zf=8   #end points (-zf,+zf) of real-space array
 n=101  #number of points in real-space array
-tf=100 #number of points in time (final time=dt*tf)
+tf=13 #number of points in time (final time=dt*tf)
 
 #Pulse Shapes
 def gaussian(z):
@@ -207,7 +207,12 @@ fig2, ax3 = plt.subplots()
 pp=np.linspace(0,2*np.pi,n)
 f=myfft(u,dz)
 fnorm=f@f.conj().T*dk
-ax3.plot(pp,(dk**2*2*(np.real(np.exp(1j*pp)*(f.conj()@M@f.conj().T)))+f.conj()@N@f.T)/fnorm)
+
+p1=f.conj()@M@f.conj().T
+p2=f.conj()@N@f.T
+p3=np.exp(1j*2.*pp)
+
+ax3.plot(pp,(dk**4*(2.*np.real(p3*p1)+2.*p2)/fnorm)+1.)
 
 #Determine final z-space FWHM
 #FWHM2=FWHM(zz,np.abs(U)**2)
