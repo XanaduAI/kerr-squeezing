@@ -3,17 +3,13 @@ import matplotlib.pyplot as plt
 from scipy.linalg import expm
 
 
-TN=10   #nonlinear time
-TD=500   #dispersion time
-#TN=0.9578 #0.5pi for t=1000, zf=8, n=6001
-#TN=0.4789 #1.0pi for t=1000, zf=8, n=6001
-#TN=0.3193 #1.5pi for t=1000, zf=8, n=6001
-#TN=0.1916 #2.5pi for t=1000, zf=8, n=6001
-#TN=0.1368 #3.5pi for t=1000, zf=8, n=6001
+TN=3   #nonlinear time
+TD=500  #dispersion time
+G=0.01 #loss rate
 
 zf=8   #end points (-zf,+zf) of real-space array
 n=101  #number of points in real-space array
-tf=100 #number of points in time (final time=dz*df)
+tf=100 #number of points in time (final time=dt*tf)
 
 #Pulse Shapes
 def gaussian(z):
@@ -21,44 +17,6 @@ def gaussian(z):
 
 def sech(z):
     return 1./(np.cosh(z)*np.sqrt(2.))
-
-#Fourier Transform Functions
-def myfft(z,dz):
-    return np.fft.fftshift(np.fft.fft(z)*dz/np.sqrt(2.*np.pi))
-
-def myifft(k,dk):
-    return np.fft.ifftshift(np.fft.ifft(k)*dk*n/np.sqrt(2.*np.pi))
-    
-#Split-Step Fourier Operators For Mean-Field Evolution
-def opD(z,kk,dt):
-    k=np.fft.fft(z)    
-    return np.fft.ifft(np.exp(dt/2.*(1j*kk**2/(2.*TD)))*k)
-
-def opN(z,zi,dt):
-    return np.exp(dt*1j/TN*np.abs(zi)**2)*z
-
-#Matrices For Fluctuation Evolution
-def S(z,dz):
-    return myfft(z**2,dz)/TN
-
-def M(z,dz):
-    return myfft(np.abs(z)**2,dz)/TN
-
-def A(z,dz,kk,dk,i):
-    Mk=M(z,dz)
-    D=np.diag(np.full(len(kk),kk**2/(2.*TD)))
-    return D+2.*dk*Mk[i]/np.sqrt(2.*np.pi)
-
-def B(z,dz,dk,i):
-    Sk=S(z,dz)
-    return dk*Sk[i]/np.sqrt(2.*np.pi)
-
-def Q(z,dz,kk,dk,im,ip):
-    a=A(z,dz,kk,dk,im)
-    b=B(z,dz,dk,ip)
-#    print(np.linalg.norm(a-a.conj().T)) #check properties of A and B
-#    print(np.linalg.norm(b-b.T))
-    return np.block([[a,b],[-b.conj().T,-a.conj()]])
 
 #Helper For Determining Mean-Field Widths
 def FWHM(X,Y):
@@ -68,6 +26,144 @@ def FWHM(X,Y):
     right_idx = np.where(d < 0)[-1]
     return X[right_idx] - X[left_idx]
 
+#Fourier Transform Functions
+def myfft(z,dz):
+    return np.fft.fftshift(np.fft.fft(z)*dz/np.sqrt(2.*np.pi))
+
+def myifft(k,dk):
+    return np.fft.ifftshift(np.fft.ifft(k)*dk*n/np.sqrt(2.*np.pi))
+    
+#Split-Step Fourier Operators For Mean-Field Evolution
+def opD(u,kk,dt):
+    k=np.fft.fft(u)    
+    return np.exp(dt/2.*(-G/2.))*np.fft.ifft(np.exp(dt/2.*(1j*kk**2/(2.*TD)))*k)
+
+def opN(u,ui,dt):
+    return np.exp(dt*1j/TN*np.abs(ui)**2)*u
+
+#Matrices For Fluctuation Evolution
+def s(u,dz):
+    return myfft(u**2,dz)/TN
+
+def m(u,dz):
+    return myfft(np.abs(u)**2,dz)/TN
+
+def A(u,dz,kk,dk,i):
+    mk=m(u,dz)
+    D=np.diag(np.full(n,kk**2/(2.*TD)))
+    return D+2.*dk*mk[i]/np.sqrt(2.*np.pi)
+
+def B(u,dz,dk,i):
+    sk=s(u,dz)
+    return dk*sk[i]/np.sqrt(2.*np.pi)
+
+def Q(u,dz,kk,dk,im,ip,check="False"):
+    a=A(u,dz,kk,dk,im)
+    b=B(u,dz,dk,ip)
+    if check=="True":
+        print(np.linalg.norm(a-a.conj().T)) #check properties of A and B
+        print(np.linalg.norm(b-b.T))
+    return np.block([[a,b],[-b.conj().T,-a.conj()]])
+
+#Lossless Propagation
+def P_no_loss(u,dz,kk,ks,dk,im,ip,dt,UWcheck="False",MNcheck="False"):
+    M=np.zeros(n)
+    N=np.zeros(n)
+    K=np.identity(2*n)
+    for i in range(tf):
+        ui=u
+        u=opD(u,kk,dt) 
+        u=opN(u,ui,dt)
+        u=opD(u,kk,dt)
+        K=expm(1j*dt*Q(u,dz,ks,dk,im,ip))@K
+    U=K[0:n,0:n]
+    W=K[0:n,n:2*n]
+    if UWcheck=="True":
+    #Check properties of U and W
+        print(np.linalg.norm(U@(U.conj().T)-W@(W.conj().T)-np.identity(n)))
+        print(np.linalg.norm(U@(W.T)-W@(U.T)))
+    M=U@W.T
+    N=W.conj()@W.T
+    if MNcheck=="True":
+    #Check properties of N and M
+        l1,v1=np.linalg.eigh(N)
+        l1=np.sort(l1)
+        v2,l2,w2=np.linalg.svd(M)
+        l2=np.sort(l2)
+        print(np.linalg.norm(l2*l2-l1*(l1+1)))
+    return u,M,N
+
+#Lossy Propagation
+def P(u,dz,kk,ks,dk,im,ip,dt,UWcheck="False",MNcheck="False"):
+    M=np.zeros(n)
+    N=np.zeros(n)
+    for i in range(tf):
+        ui=u
+        u=opD(u,kk,dt) 
+        u=opN(u,ui,dt)
+        u=opD(u,kk,dt)
+        K=expm(1j*dt*Q(u,dz,ks,dk,im,ip))
+        U=K[0:n,0:n]
+        W=K[0:n,n:2*n]
+        if UWcheck=="True":
+        #Check properties of U and W
+            print(np.linalg.norm(U@(U.conj().T)-W@(W.conj().T)-np.identity(n)))
+            print(np.linalg.norm(U@(W.T)-W@(U.T)))
+        M= U@M@(U.T) + W@(M.conj())@(W.T) + W@N@(U.T) + U@(N.T)@(W.T) + U@(W.T)
+        N= W.conj()@M@(U.T) + U.conj()@(M.conj())@(W.T) + U.conj()@N@(U.T) + W.conj()@(N.T)@(W.T) + W.conj()@(W.T)
+        M=(1-G*dt)*M
+        N=(1-G*dt)*N
+        if MNcheck=="True":
+        #Check properties of N and M
+            l1,v1=np.linalg.eigh(N)
+            l1=np.sort(l1)
+            v2,l2,w2=np.linalg.svd(M)
+            l2=np.sort(l2)
+            print(np.linalg.norm(l2*l2-l1*(l1+1)))
+    return u,M,N
+
+#Nico Propagation
+def prop(u,dz,kk,ks,dk,im,ip,dt,UWcheck="False",MNcheck="False"):
+    M=np.zeros(n)
+    N=np.zeros(n)
+    K=np.identity(2*n)
+    for i in range(tf):
+        ui=u
+        u=opD(u,kk,dt) 
+        u=opN(u,ui,dt)
+        u=opD(u,kk,dt)
+        K=expm(1j*dt*Q(u,dz,ks,dk,im,ip))@K
+    U=K[0:n,0:n]
+    W=K[0:n,n:2*n]
+    if UWcheck=="True":
+    #Check properties of U and W
+        print(np.linalg.norm(U@(U.conj().T)-W@(W.conj().T)-np.identity(n)))
+        print(np.linalg.norm(U@(W.T)-W@(U.T)))
+    M=U@W.T
+    N=W.conj()@W.T
+    M=(1-G*dt*tf)*M
+    N=(1-G*dt*tf)*N
+    if MNcheck=="True":
+    #Check properties of N and M
+        l1,v1=np.linalg.eigh(N)
+        l1=np.sort(l1)
+        v2,l2,w2=np.linalg.svd(M)
+        l2=np.sort(l2)
+        print(np.linalg.norm(l2*l2-l1*(l1+1)))
+    return u,M,N
+
+#Verification Functions
+def norm_check(u,dz,dk):
+    print(u@u.conj().T*dz)
+    a=myfft(u,dz)
+    print(a@a.conj().T*dk)
+    
+def Q_check(u,dz,ks,dk,im,ip):
+    atemp=np.identity(n)
+    R=np.block([[atemp,atemp*0],[atemp*0,-atemp]])
+    Qtemp=Q(u,dz,ks,dk,im,ip)
+    print(np.linalg.norm(Qtemp@R-R@Qtemp.conj().T))
+
 #Set up z- and k-space arrays
 zz=np.linspace(-zf,zf,n)
 dz=zz[1]-zz[0]
@@ -76,21 +172,16 @@ ks=np.fft.fftshift(kk)
 dk=kk[1]-kk[0]
 
 #Define mean-field in z-space
-U=gaussian(zz)
+u=gaussian(zz)
 
 #Plot in initial mean-field in z- and k-space
 fig, (ax1, ax2) = plt.subplots(1, 2)
-ax1.plot(zz,np.abs(U)**2)
+ax1.plot(zz,np.abs(u)**2)
 plt.xlim(-1.5*zf,1.5*zf)
-ax2.plot(ks,np.abs(myfft(U,dz))**2)
+ax2.plot(ks,np.abs(myfft(u,dz))**2)
 
 #Determine initial z-space FWHM
 #FWHM1=FWHM(zz,abs(U)**2)
-
-#Check initial z- and k-space normalizations
-#print(U@U.conj().T*dz)
-#a=myfft(U,dz)
-#print(a@a.conj().T*dk)
 
 #Set up k-space grid
 xx,yy=np.meshgrid(ks,ks)/dk
@@ -99,57 +190,27 @@ ip=np.rint(xx+yy)+(n-1)/2
 im=np.clip(im,0,n-1).astype(int)
 ip=np.clip(ip,0,n-1).astype(int)
 
-#Initialize K
-K=np.identity(2*len(im))
-
-#Check properties of Q
-#atemp=np.identity(len(im))
-#R=np.block([[atemp,atemp*0],[atemp*0,-atemp]])
-#Qtemp=Q(U,dz,ks,dk,im,ip)
-#print(np.linalg.norm(Qtemp@R-R@Qtemp.conj().T))
-
 #Perform Evolution
 dt=dz #using dz as dt
-for i in range(tf):
-  Ui=U
-  U=opD(U,kk,dt) 
-  U=opN(U,Ui,dt)
-  U=opD(U,kk,dt)
-  K=expm(1j*dt*Q(U,dz,ks,dk,im,ip))@K
-  
-X=K[0:n,0:n]
-W=K[0:n,n:2*n]
-W2=K[n:2*n,0:n]
-X2=K[n:2*n,n:2*n]
-
-#Check properties of X and W
-#print(np.linalg.norm(X@X.conj().T-W@W.conj().T-np.identity(len(im))))
-#print(np.linalg.norm(X@W.T-W@X.T))
-
-N=W.conj()@W.T
-O=X@W.T
-
-#Check properties of N and O
-l1,v1=np.linalg.eigh(N)
-v2,l2,w2=np.linalg.svd(O)
-l2=np.sort(l2)
-print(np.linalg.norm(l2*l2-l1*(l1+1)))
+u,M,N=prop(u,dz,kk,ks,dk,im,ip,dt)
 
 #Plot final mean-field in z- and k-space
-ax1.plot(zz,np.abs(U)**2)
-ax2.plot(ks,np.abs(myfft(U,dz))**2)
+ax1.plot(zz,np.abs(u)**2)
+ax2.plot(ks,np.abs(myfft(u,dz))**2)
 
 #Plot final expectation value of "number" moment in k-space
 ax2.plot(ks,np.real_if_close(np.diag(N)))
-plt.matshow(np.abs(O)**2,origin="lower")
+plt.matshow(np.abs(M)**2,origin="lower")
+
+#Plot shot-noise-subtracted quadtrature variance
+fig2, ax3 = plt.subplots()
+pp=np.linspace(0,2*np.pi,n)
+f=myfft(u,dz)
+fnorm=f@f.conj().T*dk
+ax3.plot(pp,(dk**2*2*(np.real(np.exp(1j*pp)*(f.conj()@M@f.conj().T)))+f.conj()@N@f.T)/fnorm)
 
 #Determine final z-space FWHM
 #FWHM2=FWHM(zz,np.abs(U)**2)
-
-#Check final z- and k-space normalizations
-#print(U@U.conj().T*dz)
-#a=myfft(U,dz)
-#print(a@a.conj().T*dk)
 
 #Compare ratio of final and initial widths to that expected from TN>>TD theory
 #print(FWHM2/FWHM1)
