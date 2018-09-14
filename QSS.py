@@ -94,7 +94,7 @@ def P_no_loss(u,dz,kk,ks,dk,im,ip,dt,UWcheck="False",MNcheck="False"):
     return u,M,N
 
 #Lossy Propagation
-def P(u,dz,kk,ks,dk,im,ip,dt,UWcheck="False",MNcheck="False"):
+def P_loss(u,dz,kk,ks,dk,im,ip,dt,UWcheck="False",MNcheck="False"):
     M=np.zeros(n)
     N=np.zeros(n)
     for i in range(tf):
@@ -123,7 +123,7 @@ def P(u,dz,kk,ks,dk,im,ip,dt,UWcheck="False",MNcheck="False"):
     return u,M,N
 
 #Nico Propagation
-def prop(u,dz,kk,ks,dk,im,ip,dt,UWcheck="False",MNcheck="False"):
+def P_Nico(u,dz,kk,ks,dk,im,ip,dt,UWcheck="False",MNcheck="False"):
     M=np.zeros(n)
     N=np.zeros(n)
     K=np.identity(2*n)
@@ -141,8 +141,8 @@ def prop(u,dz,kk,ks,dk,im,ip,dt,UWcheck="False",MNcheck="False"):
         print(np.linalg.norm(U@(W.T)-W@(U.T)))
     M=U@W.T
     N=W.conj()@W.T
-    M=(1-G*dt*tf)*M
-    N=(1-G*dt*tf)*N
+    M=np.exp(-G*dt*tf)*M
+    N=np.exp(-G*dt*tf)*N
     if MNcheck=="True":
     #Check properties of N and M
         l1,v1=np.linalg.eigh(N)
@@ -192,7 +192,7 @@ ip=np.clip(ip,0,n-1).astype(int)
 
 #Perform Evolution
 dt=dz #using dz as dt
-u,M,N=prop(u,dz,kk,ks,dk,im,ip,dt)
+u,M,N=P_loss(u,dz,kk,ks,dk,im,ip,dt)
 
 #Plot final mean-field in z- and k-space
 ax1.plot(zz,np.abs(u)**2)
