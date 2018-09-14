@@ -12,7 +12,8 @@ TD=500   #dispersion time
 #TN=0.1368 #3.5pi for t=1000, zf=8, n=6001
 
 zf=8   #end points (-zf,+zf) of real-space array
-n=101 # number of points in real-space array
+n=101  #number of points in real-space array
+tf=100 #number of points in time (final time=dz*df)
 
 #Pulse Shapes
 def gaussian(z):
@@ -108,12 +109,13 @@ K=np.identity(2*len(im))
 #print(np.linalg.norm(Qtemp@R-R@Qtemp.conj().T))
 
 #Perform Evolution
-for i in range(100):
+dt=dz #using dz as dt
+for i in range(tf):
   Ui=U
-  U=opD(U,kk,dz) #using dz as dt
-  U=opN(U,Ui,dz)
-  U=opD(U,kk,dz)
-  K=expm(1j*dz*Q(U,dz,ks,dk,im,ip))@K
+  U=opD(U,kk,dt) 
+  U=opN(U,Ui,dt)
+  U=opD(U,kk,dt)
+  K=expm(1j*dt*Q(U,dz,ks,dk,im,ip))@K
   
 X=K[0:n,0:n]
 W=K[0:n,n:2*n]
@@ -121,15 +123,25 @@ W2=K[n:2*n,0:n]
 X2=K[n:2*n,n:2*n]
 
 #Check properties of X and W
-print(np.linalg.norm(X@X.conj().T-W@W.conj().T-np.identity(len(im))))
-print(np.linalg.norm(X@W.T-W@X.T))
+#print(np.linalg.norm(X@X.conj().T-W@W.conj().T-np.identity(len(im))))
+#print(np.linalg.norm(X@W.T-W@X.T))
+
+N=W.conj()@W.T
+O=X@W.T
+
+#Check properties of N and O
+l1,v1=np.linalg.eigh(N)
+v2,l2,w2=np.linalg.svd(O)
+l2=np.sort(l2)
+print(np.linalg.norm(l2*l2-l1*(l1+1)))
 
 #Plot final mean-field in z- and k-space
 ax1.plot(zz,np.abs(U)**2)
 ax2.plot(ks,np.abs(myfft(U,dz))**2)
 
 #Plot final expectation value of "number" moment in k-space
-ax2.plot(ks,np.real_if_close(np.diag(W.conj()@W.T)))
+ax2.plot(ks,np.real_if_close(np.diag(N)))
+plt.matshow(np.abs(O)**2,origin="lower")
 
 #Determine final z-space FWHM
 #FWHM2=FWHM(zz,np.abs(U)**2)
@@ -141,4 +153,4 @@ ax2.plot(ks,np.real_if_close(np.diag(W.conj()@W.T)))
 
 #Compare ratio of final and initial widths to that expected from TN>>TD theory
 #print(FWHM2/FWHM1)
-#print(np.sqrt(1.+(hz*1000/TD)**2))
+#print(np.sqrt(1.+(hz*tf/TD)**2))
