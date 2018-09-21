@@ -58,14 +58,14 @@ ax2.plot(ks,np.abs(myfft(u,dz))**2)
 ax2.plot(ks,np.real_if_close(np.diag(N)))
 plt.matshow(np.abs(M)**2,origin="lower")
 
-#Plot shot-noise-subtracted quadtrature variance
+#Plot quadtrature variance
 fig2, ax3 = plt.subplots()
 phi=np.linspace(0,np.pi,100)
 f=myfft(u,dz)
 f/=np.linalg.norm(f)
 
 p1=f.conj()@M@f.conj().T
-p2=f.conj()@N@f.T
+p2=f@N@f.conj().T
 
 q1=np.exp(2j*np.linspace(0,np.pi,100))*p1
 q2=p2
