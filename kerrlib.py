@@ -11,6 +11,9 @@ def sech(z):
 def rect(z):
     return np.where(abs(z)<=np.sqrt(2*np.log(2)), 1, 0)
 
+def lorentzian(z):
+    return 1./np.sqrt(1.+z**2)
+
 #Helper For Determining Mean-Field Widths
 def FWHM(X,Y):
     half_max = np.max(Y) / 2.
@@ -100,6 +103,7 @@ def P_no_loss(u,TD,TN,dz,kk,ks,dk,im,ip,tf,dt,n,UWcheck="False",MNcheck="False")
         v2,l2,w2=np.linalg.svd(M)
         l2=np.sort(l2)
         print(np.linalg.norm(l2*l2-l1*(l1+1)))
+        print(np.linalg.norm(M.conj()@M-N@(N+np.identity(n))))
     return u,M,N
 
 #Lossy Propagation
@@ -129,6 +133,7 @@ def P_loss(u,TD,TN,G,dz,kk,ks,dk,im,ip,tf,dt,n,UWcheck="False",MNcheck="False"):
             v2,l2,w2=np.linalg.svd(M)
             l2=np.sort(l2)
             print(np.linalg.norm(l2*l2-l1*(l1+1)))
+            print(np.linalg.norm(M.conj()@M-N@(N+np.identity(n))))
     return u,M,N
 
 #Nico Propagation
@@ -159,6 +164,7 @@ def P_Nico(u,TD,TN,G,dz,kk,ks,dk,im,ip,tf,dt,n,UWcheck="False",MNcheck="False"):
         v2,l2,w2=np.linalg.svd(M)
         l2=np.sort(l2)
         print(np.linalg.norm(l2*l2-l1*(l1+1)))
+        print(np.linalg.norm(M.conj()@M-N@(N+np.identity(n))))
     return u,M,N
 
 #Verification Functions
