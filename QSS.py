@@ -1,21 +1,22 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from kerrlib import P_loss, gaussian, myfft
+from kerrlib import P_loss, sech, myfft
 
-c=299792458     #speed of light [m/s]
-L=0.03          #length of waveguide [m]
-T0=2.0*10**-12  #pulse width [s]               
-v=c/2.1         #group velocity
-b2=1.75*10**-25 #group velocity dispersion [s^2/m]
-P0=30           #input power [W]
-g=1             #nonlinear parameter [/m/W]
+c=299792458      #speed of light [m/s]
+L=0.03           #length of waveguide [m]
+T0=0.017*10**-12 #pulse FWHN [s]
+T0=T0/(2*np.sqrt(1+np.log(np.sqrt(2))))  #sech pulse width [s]   
+v=c/2.1          #group velocity
+b2=1.75*10**-25  #group velocity dispersion [s^2/m]
+P0=20            #input power [W]
+g=1              #nonlinear parameter [/m/W]
 
 Z0=T0*v
 
-TN=1/(g*P0*v)*10**10      #nonlinear time
-TD=Z0**2/(b2*v**3)*10**10 #dispersion time
+TN=1/(g*P0*v)*10**10      #scaled nonlinear time
+TD=Z0**2/(b2*v**3)*10**10 #scaled dispersion time
 
-G=0.01                    #loss rate
+G=0.01                    #scaled loss rate
 
 zf=8   #end points (-zf,+zf) of real-space array
 n=101  #number of points in real-space array
@@ -28,14 +29,14 @@ ks=np.fft.fftshift(kk)
 dk=kk[1]-kk[0]
 tf=np.rint(L/(v*dz)*10**10).astype(int) #number of points in time (final time=dt*tf)
 
-
 #Define mean-field in z-space
-u=gaussian(zz)
+u=sech(zz)
 
 #Plot in initial mean-field in z- and k-space
 fig, (ax1, ax2) = plt.subplots(1, 2)
+ax1.set_xlim(-zf,zf)
 ax1.plot(zz,np.abs(u)**2)
-plt.xlim(-4*zf,4*zf)
+ax2.set_xlim(-zf,zf)
 ax2.plot(ks,np.abs(myfft(u,dz))**2)
 
 #Set up k-space grid
@@ -48,6 +49,7 @@ ip=np.clip(ip,0,n-1).astype(int)
 #Perform Evolution
 dt=dz #using dz as dt
 #u=P_mean_field(u,TD,TN,0,zz,dz,kk,ks,tf,dt)
+#u,M,N=P_no_loss(u,TD,TN,dz,kk,ks,dk,im,ip,tf,dt,n)
 u,M,N=P_loss(u,TD,TN,G,dz,kk,ks,dk,im,ip,tf,dt,n)
 
 #Plot final mean-field in z- and k-space
