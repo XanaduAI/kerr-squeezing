@@ -1,6 +1,7 @@
 import numpy as np
 from scipy.linalg import expm
 
+
 # Pulse Shapes
 def gaussian(z):
     r"""Returns a Gaussian function in z
@@ -9,7 +10,8 @@ def gaussian(z):
         z (array): Input values
 
     Returns:
-        (array): Output array, element-wise exponential of negative z**2/2. This is a scalar if x is a scalar.
+        (array): Output array, element-wise exponential of negative z**2/2.
+          This is a scalar if x is a scalar.
     """
     return np.exp(-z ** 2 / 2.0)
 
@@ -34,7 +36,8 @@ def rect(z, l=2 * np.sqrt(2 * np.log(2))):
         l (array): Width of the top hat function
 
     Returns:
-        (array): Output array, element-wise top hat function of z. This is a scalar if x is a scalar.
+        (array): Output array, element-wise top hat function of z. This is a scalar if x is a
+        scalar.
     """
     return np.where(abs(z) <= 0.5 * l, 1, 0)
 
@@ -62,7 +65,6 @@ def FWHM(X, Y):
     Returns:
         (float): FWHM of the function Y=f(X)
     """
-
     half_max = np.max(Y) / 2.0
     d = np.sign(half_max - np.array(Y[0:-1])) - np.sign(half_max - np.array(Y[1:]))
     left_idx = np.where(d > 0)[0]
@@ -81,9 +83,9 @@ def myifft(k, dk, n):
 
 # Split-Step Fourier Operators For Mean-Field Evolution
 def opD(u, TD, G, kk, dt):
-    r"""Short time "kinetic" or "dispersive" propagator. It applies exp(1j dt*(1/2*TD) d^2/dx^2) to u(x).
-    The differential operator is applied as multiplication in reciprocal space
-    using fast Fourier transforms.
+    r"""Short time "kinetic" or "dispersive" propagator. It applies exp(1j dt*(1/2*TD) d^2/dx^2) to
+    u(x). The differential operator is applied as multiplication in reciprocal space using fast
+    Fourier transforms.
 
     Args:
         u (array): The function evaluated at a grid of points
@@ -103,7 +105,8 @@ def opD(u, TD, G, kk, dt):
 
 
 def opN(u, TN, ui, dt):
-    r"""Short time "potential" or "nonlinear" propagator. It applies exp(1j dt*(TN) |ui(x)|^2) to u(x).
+    r"""Short time "potential" or "nonlinear" propagator. It applies exp(1j dt*(TN) |ui(x)|^2) to
+    u(x).
 
     Args:
         u (array): The initial function evaluated at a grid of points
@@ -115,7 +118,6 @@ def opN(u, TN, ui, dt):
         (array): The propagated array u by amount dt
 
     """
-
     return np.exp(dt * 1j / TN * np.abs(ui) ** 2) * u
 
 
@@ -190,7 +192,8 @@ def A(u, TD, TN, dz, kk, dk, im, n):
         dz (float): Real space grid spacing
         kk (array): Reciprocal space grid
         dk (float): Reciprocal space grid spacing
-        im (int(n,n)): 2D array of integers (i,j) corresponding to the k-space gridpoints associated with i-j (clipped to be between 0 and n-1 so as not to fall off the grid).
+        im (int(n,n)): 2D array of integers (i,j) corresponding to the k-space gridpoints associated
+          with i-j (clipped to be between 0 and n-1 so as not to fall off the grid).
         n (int): Size of the output matrix A
     Returns:
         (array): A matrix
@@ -208,12 +211,12 @@ def B(u, TN, dz, dk, ip):
         TN (float): Nonlinear time
         dz (float): Real space grid spacing
         dk (float): Reciprocal space grid spacing
-        i (int(n,n)): 2D array of integers (i,j) corresponding to the k-space gridpoints associated with i+j (clipped to be between 0 and n-1 so as not to fall off the grid).
+        ip (int(n,n)): 2D array of integers (i,j) corresponding to the k-space gridpoints associated
+          with i+j (clipped to be between 0 and n-1 so as not to fall off the grid).
 
     Returns:
         (array): B array
     """
-
     sk = s(u, TN, dz)
     return dk * sk[ip] / np.sqrt(2.0 * np.pi)
 
@@ -228,15 +231,16 @@ def Q(u, TD, TN, dz, kk, dk, im, ip, n, check="False"):
         dz (float): Real space grid spacing
         kk (array): Reciprocal space grid
         dk (float): Reciprocal space grid spacing
-        im (int(n,n)): 2D array of integers (i,j) corresponding to the k-space gridpoints associated with i-j (clipped to be between 0 and n-1 so as not to fall off the grid).
-        ip (int(n,n)): 2D array of integers (i,j) corresponding to the k-space gridpoints associated with i+j (clipped to be between 0 and n-1 so as not to fall off the grid).
+        im (int(n,n)): 2D array of integers (i,j) corresponding to the k-space gridpoints associated
+          with i-j (clipped to be between 0 and n-1 so as not to fall off the grid).
+        ip (int(n,n)): 2D array of integers (i,j) corresponding to the k-space gridpoints associated
+          with i+j (clipped to be between 0 and n-1 so as not to fall off the grid).
         n (int): Size of the output matrix Q
         check (bool): test properties of submatrices of Q
 
     Returns:
         (array): Q matrix
     """
-
     a = A(u, TD, TN, dz, kk, dk, im, n)
     b = B(u, TN, dz, dk, ip)
     if check == "True":
@@ -256,8 +260,10 @@ def P_no_loss(u, TD, TN, dz, kk, ks, dk, im, ip, tf, dt, n, UWcheck="False", MNc
         dz (float): Real space grid spacing
         kk (array): Reciprocal space grid
         dk (float): Reciprocal space grid spacing
-        im (int(n,n)): 2D array of integers (i,j) corresponding to the k-space gridpoints associated with i-j (clipped to be between 0 and n-1 so as not to fall off the grid).
-        ip (int(n,n)): 2D array of integers (i,j) corresponding to the k-space gridpoints associated with i+j (clipped to be between 0 and n-1 so as not to fall off the grid).
+        im (int(n,n)): 2D array of integers (i,j) corresponding to the k-space gridpoints associated
+          with i-j (clipped to be between 0 and n-1 so as not to fall off the grid).
+        ip (int(n,n)): 2D array of integers (i,j) corresponding to the k-space gridpoints associated
+          with i+j (clipped to be between 0 and n-1 so as not to fall off the grid).
         tf (int): Number of steps
         dt (int): Size of the discretization
         n (int): Size of the output matrices
@@ -277,7 +283,7 @@ def P_no_loss(u, TD, TN, dz, kk, ks, dk, im, ip, tf, dt, n, UWcheck="False", MNc
         u = opD(u, TD, 0, kk, dt)
         K = expm(1j * dt * Q(u, TD, TN, dz, ks, dk, im, ip, n)) @ K
     U = K[0:n, 0:n]
-    W = K[0:n, n : 2 * n]
+    W = K[0:n, n:2 * n]
     if UWcheck == "True":
         # Check properties of U and W
         print(np.linalg.norm(U @ (U.conj().T) - W @ (W.conj().T) - np.identity(n)))
@@ -308,7 +314,8 @@ def P_loss(u, TD, TN, G, dz, kk, ks, dk, im, ip, tf, dt, n, UWcheck="False", MNc
         kk (array): Reciprocal space grid
         ks (array): DO NOT KNOW WHAT THIS ONE IS
         dk (float): Reciprocal space grid spacing
-        im (int(n,n)): 2D array of integers (i,j) corresponding to the k-space gridpoints associated with i-j (clipped to be between 0 and n-1 so as not to fall off the grid).
+        im (int(n,n)): 2D array of integers (i,j) corresponding to the k-space gridpoints associated
+          with i-j (clipped to be between 0 and n-1 so as not to fall off the grid).
         ip (int): DO NOT KNOW WHAT THIS ONE IS
         tf (int): Number of steps
         dt (int): Size of the discretization
@@ -328,7 +335,7 @@ def P_loss(u, TD, TN, G, dz, kk, ks, dk, im, ip, tf, dt, n, UWcheck="False", MNc
         u = opD(u, TD, G, kk, dt)
         K = expm(1j * dt * Q(u, TD, TN, dz, ks, dk, im, ip, n))
         U = K[0:n, 0:n]
-        W = K[0:n, n : 2 * n]
+        W = K[0:n, n:2 * n]
         if UWcheck == "True":
             # Check properties of U and W
             print(np.linalg.norm(U @ (U.conj().T) - W @ (W.conj().T) - np.identity(n)))
@@ -429,8 +436,10 @@ def Q_check(u, dz, ks, dk, im, ip, n):
         dz (float): Real space grid spacing
         ks (float): DO NOT KNOW WHAT THIS ONE IS
         dk (float): Reciprocal space grid spacing
-        im (int(n,n)): 2D array of integers (i,j) corresponding to the k-space gridpoints associated with i-j (clipped to be between 0 and n-1 so as not to fall off the grid).
-        ip (int(n,n)): 2D array of integers (i,j) corresponding to the k-space gridpoints associated with i+j (clipped to be between 0 and n-1 so as not to fall off the grid).
+        im (int(n,n)): 2D array of integers (i,j) corresponding to the k-space gridpoints associated
+          with i-j (clipped to be between 0 and n-1 so as not to fall off the grid).
+        ip (int(n,n)): 2D array of integers (i,j) corresponding to the k-space gridpoints associated
+          with i+j (clipped to be between 0 and n-1 so as not to fall off the grid).
         n (int): Size of the output matrices
     """
     atemp = np.identity(n)
