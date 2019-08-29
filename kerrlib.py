@@ -88,11 +88,11 @@ def opD(u, TD, G, kk, dt):
     Fourier transforms.
 
     Args:
-        u (array): The function evaluated at a grid of points
+        u (array): The function evaluated on a real space grid of points
         TD (float): Dispersion time
         G (float): Loss rate
-        kk (float): Grid of points in reciprocal space
-        dt (float): Propagation time
+        kk (array): Grid of reciprocal space points with DC point at start
+        dt (float): Size of time steps
 
     Returns:
         (array): The propagated array u by amount dt/2 (note the factor of 1/2)
@@ -109,10 +109,10 @@ def opN(u, TN, ui, dt):
     u(x).
 
     Args:
-        u (array): The initial function evaluated at a grid of points
-        TN (float): nonlinear time
+        u (array): The initial function evaluated on a real space grid of points
+        TN (float): Nonlinear time
         ui (array): Square root of the potential
-        dt (float): Propagation time
+        dt (float): Size of time steps
 
     Returns:
         (array): The propagated array u by amount dt
@@ -126,16 +126,16 @@ def P_mean_field(u, TD, TN, G, zz, dz, kk, N, dt, Dcheck="False"):
     r"""Propagates the wavefunction u by time N*dt under both dispersion and nonlinearity.
 
     Args:
-        u (array): The initial function evaluated at a grid of points
+        u (array): The initial function evaluated on a real space grid of points
         TD (float): Dispersion time
         TN (float): Nonlinear time
         G (float): Loss rate
-        zz (float): Grid of real space points
+        zz (array): Grid of real space points
         dz (float): Size of discretization in real space
-        kk (float): Grid of points in reciprocal space
+        kk (array): Grid of reciprocal space points with DC point at start
         N (int): Number of time steps
         dt (float): Size of time steps
-        Dcheck (bool): prints the FWHM ratio at the beginning and end of evolution
+        Dcheck (bool): Prints the FWHM ratio at the beginning and end of evolution
 
     Returns:
         (array): The time evolved wavefunction after N*dt time.
@@ -160,9 +160,9 @@ def s(u, TN, dz):
     r""" Helper function to construct the S array for fluctuation propagation
 
     Args:
-        u (array): Mean field values in position
+        u (array): Mean field values evaluated on a real space grid of points
         TN (float): Nonlinear time
-        dz (float): Grid spacing
+        dz (float): Size of discretization in real space
     Returns:
         (array): S array
     """
@@ -173,9 +173,9 @@ def m(u, TN, dz):
     r""" Helper function to construct the M array for fluctuation propagation
 
     Args:
-        u (array): Mean field values in position
+        u (array): Mean field values evaluated on a real space grid of points
         TN (float): Nonlinear time
-        dz (float): Grid spacing
+        dz (float): Size of discretization in real space
     Returns:
         (array): S array
     """
@@ -186,12 +186,12 @@ def A(u, TD, TN, dz, kk, dk, im, n):
     r""" Construct the A matrix for fluctuation propagation
 
     Args:
-        u (array): Mean field values in position
+        u (array): Mean field values evaluated on a real space grid of points
         TD (float): Dispersion time
         TN (float): Nonlinear time
-        dz (float): Real space grid spacing
-        kk (array): Reciprocal space grid
-        dk (float): Reciprocal space grid spacing
+        dz (float): Size of discretization in real space
+        kk (array): Grid of reciprocal space points with DC point at start
+        dk (float): Size of discretization in reciprocal space
         im (int(n,n)): 2D array of integers (i,j) corresponding to the k-space gridpoints associated
           with i-j (clipped to be between 0 and n-1 so as not to fall off the grid).
         n (int): Size of the output matrix A
@@ -207,10 +207,10 @@ def B(u, TN, dz, dk, ip):
     r""" Construct the B matrix for fluctuation propagation
 
     Args:
-        u (array): Mean field values in position
+        u (array): Mean field values evaluated on a real space grid of points
         TN (float): Nonlinear time
-        dz (float): Real space grid spacing
-        dk (float): Reciprocal space grid spacing
+        dz (float): Size of discretization in real space
+        dk (float): Size of discretization in reciprocal space
         ip (int(n,n)): 2D array of integers (i,j) corresponding to the k-space gridpoints associated
           with i+j (clipped to be between 0 and n-1 so as not to fall off the grid).
 
@@ -225,12 +225,12 @@ def Q(u, TD, TN, dz, kk, dk, im, ip, n, check="False"):
     r""" Construct the Q matrix for fluctuation propagation
 
     Args:
-        u (array): Mean field values in position
+        u (array): Mean field values evaluated on a real space grid of points
         TD (float): Dispersion time
         TN (float): Nonlinear time
-        dz (float): Real space grid spacing
-        kk (array): Reciprocal space grid
-        dk (float): Reciprocal space grid spacing
+        dz (float): Size of discretization in real space
+        kk (array): Grid of reciprocal space points with DC point at start
+        dk (float): Size of discretization in reciprocal space
         im (int(n,n)): 2D array of integers (i,j) corresponding to the k-space gridpoints associated
           with i-j (clipped to be between 0 and n-1 so as not to fall off the grid).
         ip (int(n,n)): 2D array of integers (i,j) corresponding to the k-space gridpoints associated
@@ -254,18 +254,19 @@ def P_no_loss(u, TD, TN, dz, kk, ks, dk, im, ip, tf, dt, n, UWcheck="False", MNc
     r""" Lossless propagation of the mean and fluctuations in a Kerr medium
 
     Args:
-        u (array): Mean field values in position
+        u (array): Mean field values evaluated on a real space grid of points
         TD (float): Dispersion time
         TN (float): Nonlinear time
-        dz (float): Real space grid spacing
-        kk (array): Reciprocal space grid
-        dk (float): Reciprocal space grid spacing
+        dz (float): Size of discretization in real space
+        kk (array): Grid of reciprocal space points with DC point at start
+        ks (array): Grid of reciprocal space points with DC point at centre
+        dk (float): Size of discretization in reciprocal space
         im (int(n,n)): 2D array of integers (i,j) corresponding to the k-space gridpoints associated
           with i-j (clipped to be between 0 and n-1 so as not to fall off the grid).
         ip (int(n,n)): 2D array of integers (i,j) corresponding to the k-space gridpoints associated
           with i+j (clipped to be between 0 and n-1 so as not to fall off the grid).
-        tf (int): Number of steps
-        dt (int): Size of the discretization
+        tf (int): Number of time steps
+        dt (int): Size of time steps
         n (int): Size of the output matrices
         UWcheck (bool): test properties of U and W
         MNcheck (bool): test properties of M and N
@@ -306,19 +307,20 @@ def P_loss(u, TD, TN, G, dz, kk, ks, dk, im, ip, tf, dt, n, UWcheck="False", MNc
     r""" Lossy propagation of the mean and fluctuations in a Kerr medium
 
     Args:
-        u (array): Mean field values in position
+        u (array): Mean field values evaluated on a real space grid of points
         TD (float): Dispersion time
         TN (float): Nonlinear time
         G (float): Loss rate
-        dz (float): Real space grid spacing
-        kk (array): Reciprocal space grid
-        ks (array): DO NOT KNOW WHAT THIS ONE IS
-        dk (float): Reciprocal space grid spacing
+        dz (float): Size of discretization in real space
+        kk (array): Grid of reciprocal space points with DC point at start
+        ks (array): Grid of reciprocal space points with DC point at centre
+        dk (float): Size of discretization in reciprocal space
         im (int(n,n)): 2D array of integers (i,j) corresponding to the k-space gridpoints associated
           with i-j (clipped to be between 0 and n-1 so as not to fall off the grid).
-        ip (int): DO NOT KNOW WHAT THIS ONE IS
-        tf (int): Number of steps
-        dt (int): Size of the discretization
+        ip (int(n,n)): 2D array of integers (i,j) corresponding to the k-space gridpoints associated
+          with i+j (clipped to be between 0 and n-1 so as not to fall off the grid).
+        tf (int): Number of time steps
+        dt (int): Size of time steps
         n (int): Size of the output matrices
         UWcheck (bool): test properties of U and W
         MNcheck (bool): test properties of M and N
@@ -366,16 +368,18 @@ def P_Nico(u, TD, TN, G, dz, kk, ks, dk, im, ip, tf, dt, n, UWcheck="False", MNc
     r""" Lossy propagation of the mean and fluctuations in a Kerr medium
 
     Args:
-        u (array): Mean field values in position
+        u (array): Mean field values evaluated on a real space grid of points
         TD (float): Dispersion time
         TN (float): Nonlinear time
         G (float): Loss rate
         dz (float): Real space grid spacing
         kk (array): Reciprocal space grid
         dk (float): Reciprocal space grid spacing
-        im (int): DO NOT KNOW WHAT THIS ONE IS
-        ip (int): DO NOT KNOW WHAT THIS ONE IS
-        tf (int): Number of steps
+        im (int(n,n)): 2D array of integers (i,j) corresponding to the k-space gridpoints associated
+          with i-j (clipped to be between 0 and n-1 so as not to fall off the grid).
+        ip (int(n,n)): 2D array of integers (i,j) corresponding to the k-space gridpoints associated
+          with i+j (clipped to be between 0 and n-1 so as not to fall off the grid).
+        tf (int): Number of time steps
         dt (int): Size of the discretization
         n (int): Size of the output matrices
         UWcheck (bool): test properties of U and W
@@ -394,7 +398,7 @@ def P_Nico(u, TD, TN, G, dz, kk, ks, dk, im, ip, tf, dt, n, UWcheck="False", MNc
         u = opD(u, TD, G, kk, dt)
         K = expm(1j * dt * Q(u, TD, TN, dz, ks, dk, im, ip, n)) @ K
     U = K[0:n, 0:n]
-    W = K[0:n, n : 2 * n]
+    W = K[0:n, n:2 * n]
     if UWcheck == "True":
         # Check properties of U and W
         print(np.linalg.norm(U @ (U.conj().T) - W @ (W.conj().T) - np.identity(n)))
@@ -419,9 +423,9 @@ def norm_check(u, dz, dk):
     r"""Helper function checks the normalization of myfft
 
     Args:
-        u (array): wavefunction
-        dz (float): discretization in real space
-        dk (float): discretization in reciprocal space
+        u (array): Function evaluated on a real space grid of points
+        dz (float): Real space grid spacing
+        dk (float): Reciprocal space grid spacing
     """
     print(u @ u.conj().T * dz)
     a = myfft(u, dz)
@@ -432,9 +436,9 @@ def Q_check(u, dz, ks, dk, im, ip, n):
     r""" Checks that Q is symplectic matrix
 
     Args:
-        u (array): Mean field values in position
+        u (array): Mean field values evaluated on a real space grid of points
         dz (float): Real space grid spacing
-        ks (float): DO NOT KNOW WHAT THIS ONE IS
+        ks (float): Grid of reciprocal space points with DC point at centre
         dk (float): Reciprocal space grid spacing
         im (int(n,n)): 2D array of integers (i,j) corresponding to the k-space gridpoints associated
           with i-j (clipped to be between 0 and n-1 so as not to fall off the grid).
