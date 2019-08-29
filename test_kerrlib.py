@@ -1,5 +1,6 @@
 import pytest
 import numpy as np
+from scipy.signal import find_peaks
 from kerrlib import gaussian, myfft, opD, opN, FWHM
 
 G = 0  # loss parameter
@@ -38,6 +39,30 @@ def test_dispersion():
     np.allclose(found, expected, atol=1e-2, rtol=1e-2)
 
 
+def test_nonlinearity():
+    r""" Test that nonlinearity is propagated correctly"""
+
+    TN = 0.3395  # nonlinear time corresponding to peak nonlinear phase shift of 2.5pi
+    TD = 5000  # dispersion time
+    # Define mean-field in z-space and perform evolution for 1000 time steps
+    U = gaussian(zz)
+    factor = 1
+    n_steps = int(1000 / factor)
+    dt = hz * factor
+    for i in range(n_steps):
+        Ui = U
+        U = opD(U, TD, G, kk, dt)
+        U = opN(U, TN, Ui, dt)
+        U = opD(U, TD, G, kk, dt)
+
+    # Convert to k-space and window to area of interest
+    ks = np.fft.fftshift(kk)
+    Uk = myfft(U, hz)[(ks > -1.5*zf) & (ks < 1.5*zf)]
+    # Count number of peaks equals 3 for peak nonlinear phase shift of 2.5pi
+    num_peaks = len(find_peaks(np.abs(Uk)**2)[0])
+    assert num_peaks == 3
+
+
 def test_nonlinearity_and_dispersion():
     r""" Test that nonlinearity and dispersion are propagated correctly"""
 
@@ -62,5 +87,4 @@ def test_nonlinearity_and_dispersion():
     expected = np.sqrt(
         1 + np.sqrt(2) * phiN * phiD + (1 + 4 / (3 * np.sqrt(3)) * phiN ** 2) * phiD ** 2
     )
-    # print(found, expected)
     np.allclose(found, expected, atol=1e-2, rtol=1e-2)
