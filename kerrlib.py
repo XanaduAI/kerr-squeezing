@@ -149,7 +149,7 @@ def P_mean_field(u, TD, TN, G, zz, dz, kk, N, dt, Dcheck="False"):
         # Check output field width
         FWHM2 = FWHM(zz, abs(u) ** 2)
         print(FWHM2 / FWHM1)
-        print(np.sqrt(1.0 + (dz * tf / TD) ** 2))
+        print(np.sqrt(1.0 + (dz * N / TD) ** 2))
     return u
 
 
@@ -197,7 +197,7 @@ def A(u, TD, TN, dz, kk, dk, im, n):
     """
     mk = m(u, TN, dz)
     D = np.diag(np.full(n, kk ** 2 / (2.0 * TD)))
-    return D + 2.0 * dk * mk[i] / np.sqrt(2.0 * np.pi)
+    return D + 2.0 * dk * mk[im] / np.sqrt(2.0 * np.pi)
 
 
 def B(u, TN, dz, dk, ip):
@@ -215,7 +215,7 @@ def B(u, TN, dz, dk, ip):
     """
 
     sk = s(u, TN, dz)
-    return dk * sk[i] / np.sqrt(2.0 * np.pi)
+    return dk * sk[ip] / np.sqrt(2.0 * np.pi)
 
 
 def Q(u, TD, TN, dz, kk, dk, im, ip, n, check="False"):
