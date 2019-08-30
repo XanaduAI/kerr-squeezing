@@ -176,7 +176,7 @@ def m(u, TN, dz):
     return myfft(np.abs(u) ** 2, dz) / TN
 
 
-def A(u, TD, TN, dz, kk, dk, im, n):
+def A(u, TD, TN, dz, ks, dk, im, n):
     r""" Construct the A matrix for fluctuation propagation
 
     Args:
@@ -184,7 +184,7 @@ def A(u, TD, TN, dz, kk, dk, im, n):
         TD (float): Dispersion time
         TN (float): Nonlinear time
         dz (float): Size of discretization in real space
-        kk (array): Grid of reciprocal space points with DC point at start
+        ks (array): Grid of reciprocal space points with DC point at centre
         dk (float): Size of discretization in reciprocal space
         im (int(n,n)): 2D array of integers (i,j) corresponding to the k-space gridpoints associated
           with i-j (clipped to be between 0 and n-1 so as not to fall off the grid).
@@ -193,7 +193,7 @@ def A(u, TD, TN, dz, kk, dk, im, n):
         (array): A matrix
     """
     mk = m(u, TN, dz)
-    D = np.diag(np.full(n, kk ** 2 / (2.0 * TD)))
+    D = np.diag(np.full(n, ks ** 2 / (2.0 * TD)))
     return D + 2.0 * dk * mk[im] / np.sqrt(2.0 * np.pi)
 
 
@@ -215,7 +215,7 @@ def B(u, TN, dz, dk, ip):
     return dk * sk[ip] / np.sqrt(2.0 * np.pi)
 
 
-def Q(u, TD, TN, dz, kk, dk, im, ip, n):
+def Q(u, TD, TN, dz, ks, dk, im, ip, n):
     r""" Construct the Q matrix for fluctuation propagation
 
     Args:
@@ -223,7 +223,7 @@ def Q(u, TD, TN, dz, kk, dk, im, ip, n):
         TD (float): Dispersion time
         TN (float): Nonlinear time
         dz (float): Size of discretization in real space
-        kk (array): Grid of reciprocal space points with DC point at start
+        ks (array): Grid of reciprocal space points with DC point at centre
         dk (float): Size of discretization in reciprocal space
         im (int(n,n)): 2D array of integers (i,j) corresponding to the k-space gridpoints associated
           with i-j (clipped to be between 0 and n-1 so as not to fall off the grid).
@@ -234,7 +234,7 @@ def Q(u, TD, TN, dz, kk, dk, im, ip, n):
     Returns:
         (array): Q matrix
     """
-    a = A(u, TD, TN, dz, kk, dk, im, n)
+    a = A(u, TD, TN, dz, ks, dk, im, n)
     b = B(u, TN, dz, dk, ip)
     return np.block([[a, b], [-b.conj().T, -a.conj()]])
 
