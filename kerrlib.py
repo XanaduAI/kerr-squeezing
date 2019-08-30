@@ -139,8 +139,6 @@ def P_mean_field(u, TD, TN, G, zz, dz, kk, N, dt):
     Returns:
         (array): The time evolved wavefunction after N*dt time.
     """
-    if Dcheck == "True":
-        FWHM1 = FWHM(zz, abs(u) ** 2)
     for _ in range(N):
         ui = u
         u = opD(u, TD, G, kk, dt)
