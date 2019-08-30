@@ -1,7 +1,7 @@
 import pytest
 import numpy as np
 from scipy.signal import find_peaks
-from kerrlib import gaussian, myfft, opD, opN, FWHM
+from kerrlib import gaussian, myfft, opD, opN, FWHM, A, B, Q
 
 G = 0  # loss parameter
 
@@ -12,6 +12,7 @@ n = 6001  # number of points in real-space array
 zz = np.linspace(-zf, zf, n)
 hz = zz[1] - zz[0]
 kk = np.fft.fftfreq(n, d=hz) * (2.0 * np.pi)
+ks = np.fft.fftshift(kk)
 hk = kk[1] - kk[0]
 
 
@@ -88,3 +89,39 @@ def test_nonlinearity_and_dispersion():
         1 + np.sqrt(2) * phiN * phiD + (1 + 4 / (3 * np.sqrt(3)) * phiN ** 2) * phiD ** 2
     )
     np.allclose(found, expected, atol=1e-2, rtol=1e-2)
+
+
+def test_submatrices():
+    r"""Test submatrices of Q. A should be Hermitian and B should be symmetric."""
+    U = gaussian(zz)
+    TD = 4
+    TN = 4
+    xx, yy = np.meshgrid(ks, ks) / hk
+    im = np.rint(xx - yy) + (n - 1) / 2
+    ip = np.rint(xx + yy) + (n - 1) / 2
+    im = np.clip(im, 0, n - 1).astype(int)
+    ip = np.clip(ip, 0, n - 1).astype(int)
+
+    a = A(U, TD, TN, hz, kk, hk, im, n)
+    b = B(U, TN, hz, hk, ip)
+
+    np.testing.assert_almost_equal(np.linalg.norm(a - a.conj().T), 0)
+    np.testing.assert_almost_equal(np.linalg.norm(b - b.T), 0)
+
+
+def test_Q_matrix():
+    r"""Test that Q is a symplectic matrix."""
+    U = gaussian(zz)
+    TD = 4
+    TN = 4
+    xx, yy = np.meshgrid(ks, ks) / hk
+    im = np.rint(xx - yy) + (n - 1) / 2
+    ip = np.rint(xx + yy) + (n - 1) / 2
+    im = np.clip(im, 0, n - 1).astype(int)
+    ip = np.clip(ip, 0, n - 1).astype(int)
+
+    Qtemp = Q(U, TD, TN, hz, ks, hk, im, ip, n)
+    atemp = np.identity(n)
+    R = np.block([[atemp, atemp * 0], [atemp * 0, -atemp]])
+
+    np.testing.assert_almost_equal(np.linalg.norm(Qtemp @ R - R @ Qtemp.conj().T), 0)
