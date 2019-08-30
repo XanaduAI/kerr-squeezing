@@ -351,61 +351,6 @@ def P_loss(u, TD, TN, G, dz, kk, ks, dk, im, ip, tf, dt, n, UWcheck="False", MNc
     return u, M, N
 
 
-# Nico Propagation
-def P_Nico(u, TD, TN, G, dz, kk, ks, dk, im, ip, tf, dt, n, UWcheck="False", MNcheck="False"):
-    r""" Lossy propagation of the mean and fluctuations in a Kerr medium
-
-    Args:
-        u (array): Mean field values evaluated on a real space grid of points
-        TD (float): Dispersion time
-        TN (float): Nonlinear time
-        G (float): Loss rate
-        dz (float): Real space grid spacing
-        kk (array): Reciprocal space grid
-        dk (float): Reciprocal space grid spacing
-        im (int(n,n)): 2D array of integers (i,j) corresponding to the k-space gridpoints associated
-          with i-j (clipped to be between 0 and n-1 so as not to fall off the grid).
-        ip (int(n,n)): 2D array of integers (i,j) corresponding to the k-space gridpoints associated
-          with i+j (clipped to be between 0 and n-1 so as not to fall off the grid).
-        tf (int): Number of time steps
-        dt (int): Size of the discretization
-        n (int): Size of the output matrices
-        UWcheck (bool): test properties of U and W
-        MNcheck (bool): test properties of M and N
-
-    Returns:
-        (tuple): (u,M,N), the first (u) and second order moments (M,N).
-    """
-    M = np.zeros(n)
-    N = np.zeros(n)
-    K = np.identity(2 * n)
-    for _ in range(tf):
-        ui = u
-        u = opD(u, TD, G, kk, dt)
-        u = opN(u, TN, ui, dt)
-        u = opD(u, TD, G, kk, dt)
-        K = expm(1j * dt * Q(u, TD, TN, dz, ks, dk, im, ip, n)) @ K
-    U = K[0:n, 0:n]
-    W = K[0:n, n:2 * n]
-    if UWcheck == "True":
-        # Check properties of U and W
-        print(np.linalg.norm(U @ (U.conj().T) - W @ (W.conj().T) - np.identity(n)))
-        print(np.linalg.norm(U @ (W.T) - W @ (U.T)))
-    M = U @ W.T
-    N = W.conj() @ W.T
-    M = np.exp(-G * dt * tf) * M
-    N = np.exp(-G * dt * tf) * N
-    if MNcheck == "True":
-        # Check properties of N and M
-        l1 = np.linalg.eigvalsh(N)
-        l1 = np.sort(l1)
-        l2 = np.linalg.svd(M, compute_uv=False)
-        l2 = np.sort(l2)
-        print(np.linalg.norm(l2 * l2 - l1 * (l1 + 1)))
-        print(np.linalg.norm(M.conj() @ M - N @ (N + np.identity(n))))
-    return u, M, N
-
-
 # Verification Functions
 def norm_check(u, dz, dk):
     r"""Helper function checks the normalization of myfft
