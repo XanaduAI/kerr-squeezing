@@ -25,7 +25,7 @@ class qss:
         self.ks = np.fft.fftshift(self.kk)
         self.dk = self.kk[1] - self.kk[0]
 
-    def evolution(self, L, G, T0, P0, ng, b2, g, myfunc="gaussian", TN=None, TD=None):
+    def evolution(self, L, G, T0, P0, ng, b2, g, myfunc="gaussian", loss=False, TN=None, TD=None):
         r"""Evolves mean field through nonlinear channel waveguide, returning evolved field as well
           as N and M moments.
 
@@ -39,6 +39,7 @@ class qss:
             g (float): Nonlinear parameter [/m/W].
             myfunc (str): Name of pump function shape. Must be one of 'gaussian', 'rect', 'sech', or
               'lorentzian'.
+            loss (bool): Toggle for lossless vs lossy evolution.
             TN (float): Nonlinear time [s*10^-10]. Derived parameter unless specified here.
             TD (float): Diserpsion time [s*10^-10]. Derived parameter unless specified here.
 
@@ -74,7 +75,10 @@ class qss:
         ip = np.clip(ip, 0, self.n - 1).astype(int)
 
         # Perform Evolution
-        u, M, N = P_no_loss(u, TD, TN, self.dz, self.kk, self.ks, self.dk, im, ip, tf, dt, self.n)
+        if not loss:
+            u, M, N = P_no_loss(u, TD, TN, self.dz, self.kk, self.ks, self.dk, im, ip, tf, dt, self.n)
+        else:
+            u, M, N = P_loss(u, TD, TN, G, self.dz, self.kk, self.ks, self.dk, im, ip, tf, dt, self.n)
         return u, M, N
 
     def plot_m(self, M):
