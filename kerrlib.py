@@ -420,3 +420,16 @@ def norm_check(u, dz, dk):
     print(u @ u.conj().T * dz)
     a = myfft(u, dz)
     print(a @ a.conj().T * dk)
+
+
+def expected_squeezing_g(n_phi):
+    r"""Calculate expected squeezing for Gaussian pulse for lossless, dispersionless propagation,
+    with a maximum nonlinear phase shift of n_phi according to JOSA B 7, 30 (1990).
+
+    Args:
+        n_phi (float): Maximal nonlinear phase shift.
+
+    Returns:
+        Associated squeezing in dB.
+    """
+    return 10*np.log10(1 + 2 * n_phi**2 / np.sqrt(3) - (np.sqrt(2) * n_phi + 2 * np.sqrt(2) * n_phi**3 / 3) / np.sqrt(1 + 2 * n_phi**2 / 3))
