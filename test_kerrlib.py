@@ -28,7 +28,7 @@ def test_dispersion():
     r""" Test that dispersion is propagated correctly"""
 
     factor = 1
-    n_steps = int(1000 / factor)
+    n_steps = int(50 / factor)
     dt = hz * factor
     TN = 5000  # large nonlinear time such that propagation is effectively without nonlinearity
     TD = 1  # dispersion time
@@ -46,7 +46,7 @@ def test_dispersion():
     FWHM2 = FWHM(zz, np.abs(U) ** 2)
     found = FWHM2 / FWHM1
     expected = np.sqrt(1 + (dt * n_steps / TD) ** 2)
-    np.allclose(found, expected, atol=1e-2, rtol=1e-2)
+    assert np.allclose(found, expected, atol=1e-2, rtol=1e-2)
 
 
 def test_nonlinearity():
@@ -79,7 +79,7 @@ def test_nonlinearity_and_dispersion():
     r""" Test that nonlinearity and dispersion are propagated correctly"""
 
     factor = 1
-    n_steps = int(1000 / factor)
+    n_steps = int(50 / factor)
     dt = hz * factor
     TN = 4  # Define dispersion time and nonlinear time equal and not too small
     TD = 4
@@ -101,7 +101,7 @@ def test_nonlinearity_and_dispersion():
     expected = np.sqrt(
         1 + np.sqrt(2) * phiN * phiD + (1 + 4 / (3 * np.sqrt(3)) * phiN ** 2) * phiD ** 2
     )
-    np.allclose(found, expected, atol=1e-2, rtol=1e-2)
+    assert np.allclose(found, expected, atol=1e-2, rtol=1e-2)
 
 
 def test_submatrices():

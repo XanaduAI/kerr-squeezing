@@ -20,4 +20,4 @@ def test_squeezing():
     solver = qss(zf, n)
     u_ev, M, N = solver.evolution(L, G, T0, P0, ng, b2, g, TN=L/(0.25*v)*10**10, TD=5000)
     phi, sq = solver.squeezing(u_ev, M, N)
-    np.allclose(np.min(sq), expected_squeezing_g(0.25), atol=1e-2, rtol=1e-2)
+    assert np.allclose(np.min(sq), expected_squeezing_g(0.25), atol=1e-2, rtol=1e-2)
