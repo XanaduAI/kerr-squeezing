@@ -16,7 +16,9 @@ v = 299792458 / ng
 
 
 def test_squeezing():
-    r"""Test"""
+    r"""Tests that maximal squeezing for a Gaussian pulse undergoing lossless, dispersionless
+    propagation coincides with what's predicted analytically.
+    """
     solver = qss(zf, n)
     u_ev, M, N = solver.evolution(L, G, T0, P0, ng, b2, g, TN=L/(0.25*v)*10**10, TD=5000)
     phi, sq = solver.squeezing(u_ev, M, N)
