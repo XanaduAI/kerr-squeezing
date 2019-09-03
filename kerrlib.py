@@ -238,7 +238,7 @@ def Q(u, TD, TN, dz, ks, dk, im, ip, n):
 
 
 # Lossless Propagation
-def P_no_loss(u, TD, TN, dz, kk, ks, dk, im, ip, tf, dt, n, MNcheck="False"):
+def P_no_loss(u, TD, TN, dz, kk, ks, dk, im, ip, tf, dt, n):
     r""" Lossless propagation of the mean and fluctuations in a Kerr medium
 
     Args:
@@ -256,7 +256,6 @@ def P_no_loss(u, TD, TN, dz, kk, ks, dk, im, ip, tf, dt, n, MNcheck="False"):
         tf (int): Number of time steps
         dt (int): Size of time steps
         n (int): Size of the output matrices
-        MNcheck (bool): test properties of M and N
 
     Returns:
         (tuple): (u,M,N), the first (u) and second order moments (M,N).
@@ -274,19 +273,11 @@ def P_no_loss(u, TD, TN, dz, kk, ks, dk, im, ip, tf, dt, n, MNcheck="False"):
     W = K[0:n, n:2 * n]
     M = U @ W.T
     N = W.conj() @ W.T
-    if MNcheck == "True":
-        # Check properties of N and M
-        l1 = np.linalg.eigvalsh(N)
-        l1 = np.sort(l1)
-        l2 = np.linalg.svd(M, compute_uv=False)
-        l2 = np.sort(l2)
-        print(np.linalg.norm(l2 * l2 - l1 * (l1 + 1)))
-        print(np.linalg.norm(M.conj() @ M - N @ (N + np.identity(n))))
     return u, M, N
 
 
 # Lossy Propagation
-def P_loss(u, TD, TN, G, dz, kk, ks, dk, im, ip, tf, dt, n, MNcheck="False"):
+def P_loss(u, TD, TN, G, dz, kk, ks, dk, im, ip, tf, dt, n):
     r""" Lossy propagation of the mean and fluctuations in a Kerr medium
 
     Args:
@@ -305,7 +296,6 @@ def P_loss(u, TD, TN, G, dz, kk, ks, dk, im, ip, tf, dt, n, MNcheck="False"):
         tf (int): Number of time steps
         dt (int): Size of time steps
         n (int): Size of the output matrices
-        MNcheck (bool): test properties of M and N
 
     Returns:
         (tuple): (u,M,N), the first (u) and second order moments (M,N).
@@ -330,14 +320,6 @@ def P_loss(u, TD, TN, G, dz, kk, ks, dk, im, ip, tf, dt, n, MNcheck="False"):
         )
         M = (1 - G * dt) * M
         N = (1 - G * dt) * N
-        if MNcheck == "True":
-            # Check properties of N and M
-            l1 = np.linalg.eigvalsh(N)
-            l1 = np.sort(l1)
-            l2 = np.linalg.svd(M, compute_uv=False)
-            l2 = np.sort(l2)
-            print(np.linalg.norm(l2 * l2 - l1 * (l1 + 1)))
-            print(np.linalg.norm(M.conj() @ M - N @ (N + np.identity(n))))
     return u, M, N
 
 

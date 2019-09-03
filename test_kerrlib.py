@@ -150,3 +150,21 @@ def test_propagation_submatrices():
     W = K[0:n, n:2 * n]
     np.testing.assert_almost_equal(np.linalg.norm(U @ (U.conj().T) - W @ (W.conj().T) - np.identity(n)), 0)
     np.testing.assert_almost_equal(np.linalg.norm(U @ (W.T) - W @ (U.T)), 0)
+
+
+def test_moments():
+    r"""Test M and N matrices. They should have related eigenvalues."""
+    factor = 1
+    n_steps = int(50 / factor)
+    dt = hz * factor
+    TN = 4
+    TD = 4
+
+    u = gaussian(zz)
+    u, M, N = P_no_loss(u, TD, TN, hz, kk, ks, hk, im, ip, n_steps, dt, n)
+    l1 = np.linalg.eigvalsh(N)
+    l1 = np.sort(l1)
+    l2 = np.linalg.svd(M, compute_uv=False)
+    l2 = np.sort(l2)
+    np.testing.assert_almost_equal(np.linalg.norm(l2 * l2 - l1 * (l1 + 1)), 0)
+    np.testing.assert_almost_equal(np.linalg.norm(M.conj() @ M - N @ (N + np.identity(n))), 0)
