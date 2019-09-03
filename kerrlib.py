@@ -238,7 +238,7 @@ def Q(u, TD, TN, dz, ks, dk, im, ip, n):
 
 
 # Lossless Propagation
-def P_no_loss(u, TD, TN, dz, kk, ks, dk, im, ip, tf, dt, n, UWcheck="False", MNcheck="False"):
+def P_no_loss(u, TD, TN, dz, kk, ks, dk, im, ip, tf, dt, n, MNcheck="False"):
     r""" Lossless propagation of the mean and fluctuations in a Kerr medium
 
     Args:
@@ -256,7 +256,6 @@ def P_no_loss(u, TD, TN, dz, kk, ks, dk, im, ip, tf, dt, n, UWcheck="False", MNc
         tf (int): Number of time steps
         dt (int): Size of time steps
         n (int): Size of the output matrices
-        UWcheck (bool): test properties of U and W
         MNcheck (bool): test properties of M and N
 
     Returns:
@@ -273,10 +272,6 @@ def P_no_loss(u, TD, TN, dz, kk, ks, dk, im, ip, tf, dt, n, UWcheck="False", MNc
         K = expm(1j * dt * Q(u, TD, TN, dz, ks, dk, im, ip, n)) @ K
     U = K[0:n, 0:n]
     W = K[0:n, n:2 * n]
-    if UWcheck == "True":
-        # Check properties of U and W
-        print(np.linalg.norm(U @ (U.conj().T) - W @ (W.conj().T) - np.identity(n)))
-        print(np.linalg.norm(U @ (W.T) - W @ (U.T)))
     M = U @ W.T
     N = W.conj() @ W.T
     if MNcheck == "True":
@@ -291,7 +286,7 @@ def P_no_loss(u, TD, TN, dz, kk, ks, dk, im, ip, tf, dt, n, UWcheck="False", MNc
 
 
 # Lossy Propagation
-def P_loss(u, TD, TN, G, dz, kk, ks, dk, im, ip, tf, dt, n, UWcheck="False", MNcheck="False"):
+def P_loss(u, TD, TN, G, dz, kk, ks, dk, im, ip, tf, dt, n, MNcheck="False"):
     r""" Lossy propagation of the mean and fluctuations in a Kerr medium
 
     Args:
@@ -310,7 +305,6 @@ def P_loss(u, TD, TN, G, dz, kk, ks, dk, im, ip, tf, dt, n, UWcheck="False", MNc
         tf (int): Number of time steps
         dt (int): Size of time steps
         n (int): Size of the output matrices
-        UWcheck (bool): test properties of U and W
         MNcheck (bool): test properties of M and N
 
     Returns:
@@ -326,10 +320,6 @@ def P_loss(u, TD, TN, G, dz, kk, ks, dk, im, ip, tf, dt, n, UWcheck="False", MNc
         K = expm(1j * dt * Q(u, TD, TN, dz, ks, dk, im, ip, n))
         U = K[0:n, 0:n]
         W = K[0:n, n:2 * n]
-        if UWcheck == "True":
-            # Check properties of U and W
-            print(np.linalg.norm(U @ (U.conj().T) - W @ (W.conj().T) - np.identity(n)))
-            print(np.linalg.norm(U @ (W.T) - W @ (U.T)))
         M = U @ M @ (U.T) + W @ (M.conj()) @ (W.T) + W @ N @ (U.T) + U @ (N.T) @ (W.T) + U @ (W.T)
         N = (
             W.conj() @ M @ (U.T)

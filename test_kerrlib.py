@@ -1,6 +1,7 @@
 import pytest
 import numpy as np
 from scipy.signal import find_peaks
+from scipy.linalg import expm
 from kerrlib import gaussian, myfft, opD, opN, FWHM, A, B, Q
 
 G = 0  # loss parameter
@@ -14,6 +15,13 @@ hz = zz[1] - zz[0]
 kk = np.fft.fftfreq(n, d=hz) * (2.0 * np.pi)
 ks = np.fft.fftshift(kk)
 hk = kk[1] - kk[0]
+
+# Set up k-space grid
+xx, yy = np.meshgrid(ks, ks) / hk
+im = np.rint(xx - yy) + (n - 1) / 2
+ip = np.rint(xx + yy) + (n - 1) / 2
+im = np.clip(im, 0, n - 1).astype(int)
+ip = np.clip(ip, 0, n - 1).astype(int)
 
 
 def test_dispersion():
@@ -101,11 +109,6 @@ def test_submatrices():
     U = gaussian(zz)
     TN = 4
     TD = 4
-    xx, yy = np.meshgrid(ks, ks) / hk
-    im = np.rint(xx - yy) + (n - 1) / 2
-    ip = np.rint(xx + yy) + (n - 1) / 2
-    im = np.clip(im, 0, n - 1).astype(int)
-    ip = np.clip(ip, 0, n - 1).astype(int)
 
     a = A(U, TD, TN, hz, kk, hk, im, n)
     b = B(U, TN, hz, hk, ip)
@@ -119,14 +122,31 @@ def test_Q_matrix():
     U = gaussian(zz)
     TN = 4
     TD = 4
-    xx, yy = np.meshgrid(ks, ks) / hk
-    im = np.rint(xx - yy) + (n - 1) / 2
-    ip = np.rint(xx + yy) + (n - 1) / 2
-    im = np.clip(im, 0, n - 1).astype(int)
-    ip = np.clip(ip, 0, n - 1).astype(int)
 
     Qtemp = Q(U, TD, TN, hz, ks, hk, im, ip, n)
     atemp = np.identity(n)
     R = np.block([[atemp, atemp * 0], [atemp * 0, -atemp]])
 
     np.testing.assert_almost_equal(np.linalg.norm(Qtemp @ R - R @ Qtemp.conj().T), 0)
+
+
+def test_propagation_submatrices():
+    r"""Test U and V matrices. Together they should satisfy UU^dag - WW^dag =I and UW^T = WU^T"""
+    factor = 1
+    n_steps = int(50 / factor)
+    dt = hz * factor
+    TN = 4
+    TD = 4
+
+    u = gaussian(zz)
+    K = np.identity(2 * n)
+    for _ in range(n_steps):
+        ui = u
+        u = opD(u, TD, 0, kk, dt)
+        u = opN(u, TN, ui, dt)
+        u = opD(u, TD, 0, kk, dt)
+        K = expm(1j * dt * Q(u, TD, TN, hz, ks, hk, im, ip, n)) @ K
+    U = K[0:n, 0:n]
+    W = K[0:n, n:2 * n]
+    np.testing.assert_almost_equal(np.linalg.norm(U @ (U.conj().T) - W @ (W.conj().T) - np.identity(n)), 0)
+    np.testing.assert_almost_equal(np.linalg.norm(U @ (W.T) - W @ (U.T)), 0)
