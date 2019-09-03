@@ -2,7 +2,7 @@ import pytest
 import numpy as np
 from scipy.signal import find_peaks
 from scipy.linalg import expm
-from kerrlib import gaussian, myfft, opD, opN, FWHM, A, B, Q
+from kerrlib import gaussian, myfft, opD, opN, FWHM, A, B, Q, P_no_loss
 
 G = 0  # loss parameter
 
