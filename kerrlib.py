@@ -1,6 +1,28 @@
+# Copyright 2019 Xanadu Quantum Technologies Inc.
+
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+
+#     http://www.apache.org/licenses/LICENSE-2.0
+
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+"""
+Kerrlib
+=======
+Provides numerical routines for the propagation of mean fields and phase sensitive
+and insensitive moments in a (linearized) Kerr medium and some extra utility function.
+"""
+
+
 import numpy as np
 from scipy.linalg import expm
-
+# pylint: disable=invalid-name
+# pylint: disable=too-many-arguments
 
 # Pulse Shapes
 def gaussian(z):
@@ -74,10 +96,31 @@ def FWHM(X, Y):
 
 # Fourier Transform Functions
 def myfft(z, dz):
+    r""" Numerical fourier transform of z=f(t) with t sampled at intervals dz
+
+     Args:
+        z (array): The function evaluated on a real space grid of points
+        dz (float): The spacing between the grid points
+
+    Returns:
+        (array): The fourier transform of z=f(t)
+    """
+    
     return np.fft.fftshift(np.fft.fft(z) * dz / np.sqrt(2.0 * np.pi))
 
 
 def myifft(k, dk, n):
+    r""" Numerical inverse fourier transform of k=f(s) with s sampled at intervals dk
+    for a total of n grid points
+
+     Args:
+        k (array): The function evaluated on a real space grid of points
+        dk (float): The spacing between the grid points
+        n (int): Number of sampling points
+
+    Returns:
+        (array): The fourier transform of z=f(t)
+    """
     return np.fft.ifftshift(np.fft.ifft(k) * dk * n / np.sqrt(2.0 * np.pi))
 
 
@@ -87,7 +130,7 @@ def opD(u, TD, G, kk, dt):
     u(x). The differential operator is applied as multiplication in reciprocal space using fast
     Fourier transforms.
 
-    Args:
+     Args:
         u (array): The function evaluated on a real space grid of points
         TD (float): Dispersion time
         G (float): Loss rate
@@ -302,7 +345,7 @@ def P_loss(u, TD, TN, G, dz, kk, ks, dk, im, ip, tf, dt, n):
     """
     M = np.zeros(n)
     N = np.zeros(n)
-    for i in range(tf):
+    for _ in range(tf):
         ui = u
         u = opD(u, TD, G, kk, dt)
         u = opN(u, TN, ui, dt)
@@ -311,6 +354,7 @@ def P_loss(u, TD, TN, G, dz, kk, ks, dk, im, ip, tf, dt, n):
         U = K[0:n, 0:n]
         W = K[0:n, n:2 * n]
         M = U @ M @ (U.T) + W @ (M.conj()) @ (W.T) + W @ N @ (U.T) + U @ (N.T) @ (W.T) + U @ (W.T)
+
         N = (
             W.conj() @ M @ (U.T)
             + U.conj() @ (M.conj()) @ (W.T)
@@ -321,20 +365,6 @@ def P_loss(u, TD, TN, G, dz, kk, ks, dk, im, ip, tf, dt, n):
         M = (1 - G * dt) * M
         N = (1 - G * dt) * N
     return u, M, N
-
-
-# Verification Functions
-def norm_check(u, dz, dk):
-    r"""Helper function checks the normalization of myfft
-
-    Args:
-        u (array): Function evaluated on a real space grid of points
-        dz (float): Real space grid spacing
-        dk (float): Reciprocal space grid spacing
-    """
-    print(u @ u.conj().T * dz)
-    a = myfft(u, dz)
-    print(a @ a.conj().T * dk)
 
 
 def expected_squeezing_g(n_phi):
