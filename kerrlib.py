@@ -122,7 +122,7 @@ def opN(u, TN, ui, dt):
 
 
 # Mean-Field Evolution
-def P_mean_field(u, TD, TN, G, zz, dz, kk, N, dt, Dcheck="False"):
+def P_mean_field(u, TD, TN, G, zz, dz, kk, N, dt):
     r"""Propagates the wavefunction u by time N*dt under both dispersion and nonlinearity.
 
     Args:
@@ -135,23 +135,15 @@ def P_mean_field(u, TD, TN, G, zz, dz, kk, N, dt, Dcheck="False"):
         kk (array): Grid of reciprocal space points with DC point at start
         N (int): Number of time steps
         dt (float): Size of time steps
-        Dcheck (bool): Prints the FWHM ratio at the beginning and end of evolution
 
     Returns:
         (array): The time evolved wavefunction after N*dt time.
     """
-    if Dcheck == "True":
-        FWHM1 = FWHM(zz, abs(u) ** 2)
     for _ in range(N):
         ui = u
         u = opD(u, TD, G, kk, dt)
         u = opN(u, TN, ui, dt)
         u = opD(u, TD, G, kk, dt)
-    if Dcheck:
-        # Check output field width
-        FWHM2 = FWHM(zz, abs(u) ** 2)
-        print(FWHM2 / FWHM1)
-        print(np.sqrt(1.0 + (dz * N / TD) ** 2))
     return u
 
 
@@ -182,7 +174,7 @@ def m(u, TN, dz):
     return myfft(np.abs(u) ** 2, dz) / TN
 
 
-def A(u, TD, TN, dz, kk, dk, im, n):
+def A(u, TD, TN, dz, ks, dk, im, n):
     r""" Construct the A matrix for fluctuation propagation
 
     Args:
@@ -190,7 +182,7 @@ def A(u, TD, TN, dz, kk, dk, im, n):
         TD (float): Dispersion time
         TN (float): Nonlinear time
         dz (float): Size of discretization in real space
-        kk (array): Grid of reciprocal space points with DC point at start
+        ks (array): Grid of reciprocal space points with DC point at centre
         dk (float): Size of discretization in reciprocal space
         im (int(n,n)): 2D array of integers (i,j) corresponding to the k-space gridpoints associated
           with i-j (clipped to be between 0 and n-1 so as not to fall off the grid).
@@ -199,7 +191,7 @@ def A(u, TD, TN, dz, kk, dk, im, n):
         (array): A matrix
     """
     mk = m(u, TN, dz)
-    D = np.diag(np.full(n, kk ** 2 / (2.0 * TD)))
+    D = np.diag(np.full(n, ks ** 2 / (2.0 * TD)))
     return D + 2.0 * dk * mk[im] / np.sqrt(2.0 * np.pi)
 
 
@@ -221,7 +213,7 @@ def B(u, TN, dz, dk, ip):
     return dk * sk[ip] / np.sqrt(2.0 * np.pi)
 
 
-def Q(u, TD, TN, dz, kk, dk, im, ip, n, check="False"):
+def Q(u, TD, TN, dz, ks, dk, im, ip, n):
     r""" Construct the Q matrix for fluctuation propagation
 
     Args:
@@ -229,28 +221,24 @@ def Q(u, TD, TN, dz, kk, dk, im, ip, n, check="False"):
         TD (float): Dispersion time
         TN (float): Nonlinear time
         dz (float): Size of discretization in real space
-        kk (array): Grid of reciprocal space points with DC point at start
+        ks (array): Grid of reciprocal space points with DC point at centre
         dk (float): Size of discretization in reciprocal space
         im (int(n,n)): 2D array of integers (i,j) corresponding to the k-space gridpoints associated
           with i-j (clipped to be between 0 and n-1 so as not to fall off the grid).
         ip (int(n,n)): 2D array of integers (i,j) corresponding to the k-space gridpoints associated
           with i+j (clipped to be between 0 and n-1 so as not to fall off the grid).
         n (int): Size of the output matrix Q
-        check (bool): test properties of submatrices of Q
 
     Returns:
         (array): Q matrix
     """
-    a = A(u, TD, TN, dz, kk, dk, im, n)
+    a = A(u, TD, TN, dz, ks, dk, im, n)
     b = B(u, TN, dz, dk, ip)
-    if check == "True":
-        print(np.linalg.norm(a - a.conj().T))  # check properties of A and B
-        print(np.linalg.norm(b - b.T))
     return np.block([[a, b], [-b.conj().T, -a.conj()]])
 
 
 # Lossless Propagation
-def P_no_loss(u, TD, TN, dz, kk, ks, dk, im, ip, tf, dt, n, UWcheck="False", MNcheck="False"):
+def P_no_loss(u, TD, TN, dz, kk, ks, dk, im, ip, tf, dt, n):
     r""" Lossless propagation of the mean and fluctuations in a Kerr medium
 
     Args:
@@ -268,8 +256,6 @@ def P_no_loss(u, TD, TN, dz, kk, ks, dk, im, ip, tf, dt, n, UWcheck="False", MNc
         tf (int): Number of time steps
         dt (int): Size of time steps
         n (int): Size of the output matrices
-        UWcheck (bool): test properties of U and W
-        MNcheck (bool): test properties of M and N
 
     Returns:
         (tuple): (u,M,N), the first (u) and second order moments (M,N).
@@ -285,25 +271,13 @@ def P_no_loss(u, TD, TN, dz, kk, ks, dk, im, ip, tf, dt, n, UWcheck="False", MNc
         K = expm(1j * dt * Q(u, TD, TN, dz, ks, dk, im, ip, n)) @ K
     U = K[0:n, 0:n]
     W = K[0:n, n:2 * n]
-    if UWcheck == "True":
-        # Check properties of U and W
-        print(np.linalg.norm(U @ (U.conj().T) - W @ (W.conj().T) - np.identity(n)))
-        print(np.linalg.norm(U @ (W.T) - W @ (U.T)))
     M = U @ W.T
     N = W.conj() @ W.T
-    if MNcheck == "True":
-        # Check properties of N and M
-        l1 = np.linalg.eigvalsh(N)
-        l1 = np.sort(l1)
-        l2 = np.linalg.svd(M, compute_uv=False)
-        l2 = np.sort(l2)
-        print(np.linalg.norm(l2 * l2 - l1 * (l1 + 1)))
-        print(np.linalg.norm(M.conj() @ M - N @ (N + np.identity(n))))
     return u, M, N
 
 
 # Lossy Propagation
-def P_loss(u, TD, TN, G, dz, kk, ks, dk, im, ip, tf, dt, n, UWcheck="False", MNcheck="False"):
+def P_loss(u, TD, TN, G, dz, kk, ks, dk, im, ip, tf, dt, n):
     r""" Lossy propagation of the mean and fluctuations in a Kerr medium
 
     Args:
@@ -322,8 +296,6 @@ def P_loss(u, TD, TN, G, dz, kk, ks, dk, im, ip, tf, dt, n, UWcheck="False", MNc
         tf (int): Number of time steps
         dt (int): Size of time steps
         n (int): Size of the output matrices
-        UWcheck (bool): test properties of U and W
-        MNcheck (bool): test properties of M and N
 
     Returns:
         (tuple): (u,M,N), the first (u) and second order moments (M,N).
@@ -338,10 +310,6 @@ def P_loss(u, TD, TN, G, dz, kk, ks, dk, im, ip, tf, dt, n, UWcheck="False", MNc
         K = expm(1j * dt * Q(u, TD, TN, dz, ks, dk, im, ip, n))
         U = K[0:n, 0:n]
         W = K[0:n, n:2 * n]
-        if UWcheck == "True":
-            # Check properties of U and W
-            print(np.linalg.norm(U @ (U.conj().T) - W @ (W.conj().T) - np.identity(n)))
-            print(np.linalg.norm(U @ (W.T) - W @ (U.T)))
         M = U @ M @ (U.T) + W @ (M.conj()) @ (W.T) + W @ N @ (U.T) + U @ (N.T) @ (W.T) + U @ (W.T)
         N = (
             W.conj() @ M @ (U.T)
@@ -352,69 +320,6 @@ def P_loss(u, TD, TN, G, dz, kk, ks, dk, im, ip, tf, dt, n, UWcheck="False", MNc
         )
         M = (1 - G * dt) * M
         N = (1 - G * dt) * N
-        if MNcheck == "True":
-            # Check properties of N and M
-            l1 = np.linalg.eigvalsh(N)
-            l1 = np.sort(l1)
-            l2 = np.linalg.svd(M, compute_uv=False)
-            l2 = np.sort(l2)
-            print(np.linalg.norm(l2 * l2 - l1 * (l1 + 1)))
-            print(np.linalg.norm(M.conj() @ M - N @ (N + np.identity(n))))
-    return u, M, N
-
-
-# Nico Propagation
-def P_Nico(u, TD, TN, G, dz, kk, ks, dk, im, ip, tf, dt, n, UWcheck="False", MNcheck="False"):
-    r""" Lossy propagation of the mean and fluctuations in a Kerr medium
-
-    Args:
-        u (array): Mean field values evaluated on a real space grid of points
-        TD (float): Dispersion time
-        TN (float): Nonlinear time
-        G (float): Loss rate
-        dz (float): Real space grid spacing
-        kk (array): Reciprocal space grid
-        dk (float): Reciprocal space grid spacing
-        im (int(n,n)): 2D array of integers (i,j) corresponding to the k-space gridpoints associated
-          with i-j (clipped to be between 0 and n-1 so as not to fall off the grid).
-        ip (int(n,n)): 2D array of integers (i,j) corresponding to the k-space gridpoints associated
-          with i+j (clipped to be between 0 and n-1 so as not to fall off the grid).
-        tf (int): Number of time steps
-        dt (int): Size of the discretization
-        n (int): Size of the output matrices
-        UWcheck (bool): test properties of U and W
-        MNcheck (bool): test properties of M and N
-
-    Returns:
-        (tuple): (u,M,N), the first (u) and second order moments (M,N).
-    """
-    M = np.zeros(n)
-    N = np.zeros(n)
-    K = np.identity(2 * n)
-    for _ in range(tf):
-        ui = u
-        u = opD(u, TD, G, kk, dt)
-        u = opN(u, TN, ui, dt)
-        u = opD(u, TD, G, kk, dt)
-        K = expm(1j * dt * Q(u, TD, TN, dz, ks, dk, im, ip, n)) @ K
-    U = K[0:n, 0:n]
-    W = K[0:n, n:2 * n]
-    if UWcheck == "True":
-        # Check properties of U and W
-        print(np.linalg.norm(U @ (U.conj().T) - W @ (W.conj().T) - np.identity(n)))
-        print(np.linalg.norm(U @ (W.T) - W @ (U.T)))
-    M = U @ W.T
-    N = W.conj() @ W.T
-    M = np.exp(-G * dt * tf) * M
-    N = np.exp(-G * dt * tf) * N
-    if MNcheck == "True":
-        # Check properties of N and M
-        l1 = np.linalg.eigvalsh(N)
-        l1 = np.sort(l1)
-        l2 = np.linalg.svd(M, compute_uv=False)
-        l2 = np.sort(l2)
-        print(np.linalg.norm(l2 * l2 - l1 * (l1 + 1)))
-        print(np.linalg.norm(M.conj() @ M - N @ (N + np.identity(n))))
     return u, M, N
 
 
@@ -432,21 +337,14 @@ def norm_check(u, dz, dk):
     print(a @ a.conj().T * dk)
 
 
-def Q_check(u, dz, ks, dk, im, ip, n):
-    r""" Checks that Q is symplectic matrix
+def expected_squeezing_g(n_phi):
+    r"""Calculate expected squeezing for Gaussian pulse for lossless, dispersionless propagation,
+    with a maximum nonlinear phase shift of n_phi according to JOSA B 7, 30 (1990).
 
     Args:
-        u (array): Mean field values evaluated on a real space grid of points
-        dz (float): Real space grid spacing
-        ks (float): Grid of reciprocal space points with DC point at centre
-        dk (float): Reciprocal space grid spacing
-        im (int(n,n)): 2D array of integers (i,j) corresponding to the k-space gridpoints associated
-          with i-j (clipped to be between 0 and n-1 so as not to fall off the grid).
-        ip (int(n,n)): 2D array of integers (i,j) corresponding to the k-space gridpoints associated
-          with i+j (clipped to be between 0 and n-1 so as not to fall off the grid).
-        n (int): Size of the output matrices
+        n_phi (float): Maximal nonlinear phase shift.
+
+    Returns:
+        Associated squeezing in dB.
     """
-    atemp = np.identity(n)
-    R = np.block([[atemp, atemp * 0], [atemp * 0, -atemp]])
-    Qtemp = Q(u, dz, ks, dk, im, ip)
-    print(np.linalg.norm(Qtemp @ R - R @ Qtemp.conj().T))
+    return 10*np.log10(1 + 2 * n_phi**2 / np.sqrt(3) - (np.sqrt(2) * n_phi + 2 * np.sqrt(2) * n_phi**3 / 3) / np.sqrt(1 + 2 * n_phi**2 / 3))
