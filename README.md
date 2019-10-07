@@ -9,7 +9,7 @@ The library `kerrlib.py` uses the methods derived in the reference above to nume
 
 ## Requirements
 
-To perform numerical evaluations this library requires [NumPy](https://numpy.org/) and [SciPy](https://www.scipy.org/). The unit tests use [pytest](https://docs.pytest.org/en/latest/), [matplotlib](https://matplotlib.org/) is used for graph generation and the `decompositions` module of [Strawberry Fields](https://strawberryfields.readthedocs.io/en/latest/) is used to perform Takagi decompositions in `plot_gen.py`.
+To perform numerical evaluations this library requires [NumPy](https://numpy.org/) and [SciPy](https://www.scipy.org/). The unit tests use [pytest](https://docs.pytest.org/en/latest/), [matplotlib](https://matplotlib.org/) is used for graph generation and the `decompositions` module of [Strawberry Fields](https://strawberryfields.readthedocs.io/en/latest/) is used to perform Autonne decompositions in `plot_gen.py`.
 
 All of these prerequisites can be installed via `pip`:
 
