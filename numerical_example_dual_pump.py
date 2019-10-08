@@ -41,9 +41,8 @@ from kerrlib import P_no_loss, myfft
 # The following lines provide a convenient function to evaluate the Fourier transform
 # of the function f(z) = \exp(-z**4) by loading precalculated values and the using the
 # interpolation capabilities of numpy
-y = np.loadtxt("fourierexpz4.dat")
-x = np.loadtxt("z.dat")
-func = lambda x0: np.interp(x0, x, y, left=0.0, right=0.0)
+valsxy = np.load("zfourierexp-z4.npy")
+func = lambda x0: np.interp(x0, valsxy[0], valsxy[1], left=0.0, right=0.0)
 
 
 c = 299792458  # speed of light [m/s]
