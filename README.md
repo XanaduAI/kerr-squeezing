@@ -1,7 +1,7 @@
 # Kerr Squeezing in Waveguides
 
 This repository contains the source code used to produce the numerical results presented in
-*"Degenerate Squeezing in Waveguides: A Unified Theoretical Approach"* [arXiv:1910:](https://arxiv.org/abs/1910.)
+*"Degenerate Squeezing in Waveguides: A Unified Theoretical Approach"* [arXiv:1910:06873](https://arxiv.org/abs/1910.06873)
 
 ## Contents
 
@@ -23,7 +23,7 @@ L.G. Helt and N. Quesada
 
 If you are doing any research using this source code, please cite the following paper:
 
-> L.G. Helt and N. Quesada. *"Degenerate Squeezing in Waveguides: A Unified Theoretical Approach"* [arXiv:1910:](https://arxiv.org/abs/1910.)
+> L.G. Helt and N. Quesada. *"Degenerate Squeezing in Waveguides: A Unified Theoretical Approach"* [arXiv:1910:06873](https://arxiv.org/abs/1910.06873)
 
 ## License
 
