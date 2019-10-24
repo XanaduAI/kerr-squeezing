@@ -21,8 +21,7 @@ and insensitive moments in a (linearized) Kerr medium and some extra utility fun
 
 import numpy as np
 from scipy.linalg import expm
-# pylint: disable=invalid-name
-# pylint: disable=too-many-arguments
+
 
 # Pulse Shapes
 def gaussian(z):
@@ -105,7 +104,6 @@ def myfft(z, dz):
     Returns:
         (array): The fourier transform of z=f(t)
     """
-    
     return np.fft.fftshift(np.fft.fft(z) * dz / np.sqrt(2.0 * np.pi))
 
 
@@ -356,11 +354,11 @@ def P_loss(u, TD, TN, G, dz, kk, ks, dk, im, ip, tf, dt, n):
         M = U @ M @ (U.T) + W @ (M.conj()) @ (W.T) + W @ N @ (U.T) + U @ (N.T) @ (W.T) + U @ (W.T)
 
         N = (
-            W.conj() @ M @ (U.T)
-            + U.conj() @ (M.conj()) @ (W.T)
-            + U.conj() @ N @ (U.T)
-            + W.conj() @ (N.T) @ (W.T)
-            + W.conj() @ (W.T)
+            W.conj() @ M @ (U.T) +
+            U.conj() @ (M.conj()) @ (W.T) +
+            U.conj() @ N @ (U.T) +
+            W.conj() @ (N.T) @ (W.T) +
+            W.conj() @ (W.T)
         )
         M = (1 - G * dt) * M
         N = (1 - G * dt) * N
@@ -377,4 +375,4 @@ def expected_squeezing_g(n_phi):
     Returns:
         Associated squeezing in dB.
     """
-    return 10*np.log10(1 + 2 * n_phi**2 / np.sqrt(3) - (np.sqrt(2) * n_phi + 2 * np.sqrt(2) * n_phi**3 / 3) / np.sqrt(1 + 2 * n_phi**2 / 3))
+    return 10 * np.log10(1 + 2 * n_phi**2 / np.sqrt(3) - (np.sqrt(2) * n_phi + 2 * np.sqrt(2) * n_phi**3 / 3) / np.sqrt(1 + 2 * n_phi**2 / 3))

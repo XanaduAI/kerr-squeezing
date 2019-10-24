@@ -68,7 +68,7 @@ def test_nonlinearity():
 
     # Convert to k-space and window to area of interest
     ks = np.fft.fftshift(kk)
-    Uk = myfft(U, hz)[(ks > -1.5*zf) & (ks < 1.5*zf)]
+    Uk = myfft(U, hz)[(ks > -1.5 * zf) & (ks < 1.5 * zf)]
 
     # Confirm number of peaks equals 3 for peak nonlinear phase shift of 2.5pi
     num_peaks = len(find_peaks(np.abs(Uk)**2)[0])
