@@ -49,7 +49,7 @@ def sech(z):
     return 1.0 / (np.cosh(z))
 
 
-def rect(z, l=2 * np.sqrt(2 * np.log(2))):
+def rect(z, w=2 * np.sqrt(2 * np.log(2))):
     r"""Returns a Gaussian function in z
 
     Args:
@@ -60,7 +60,7 @@ def rect(z, l=2 * np.sqrt(2 * np.log(2))):
         (array): Output array, element-wise top hat function of z. This is a scalar if x is a
         scalar.
     """
-    return np.where(abs(z) <= 0.5 * l, 1, 0)
+    return np.where(abs(z) <= 0.5 * w, 1, 0)
 
 
 def lorentzian(z):
@@ -375,4 +375,6 @@ def expected_squeezing_g(n_phi):
     Returns:
         Associated squeezing in dB.
     """
-    return 10 * np.log10(1 + 2 * n_phi**2 / np.sqrt(3) - (np.sqrt(2) * n_phi + 2 * np.sqrt(2) * n_phi**3 / 3) / np.sqrt(1 + 2 * n_phi**2 / 3))
+    return 10 * np.log10(1 + 2 * n_phi**2 / np.sqrt(3) -
+                         (np.sqrt(2) * n_phi + 2 * np.sqrt(2) * n_phi**3 / 3) /
+                         np.sqrt(1 + 2 * n_phi**2 / 3))
