@@ -49,7 +49,7 @@ class qss:
         """
 
         # Set default mean-field in z-space
-        if not u:
+        if u is None:
             u = gaussian(self.zz)
         if len(u) != self.n:
             raise ValueError(f"Pump shape function is not length {self.n}.")
@@ -57,14 +57,14 @@ class qss:
         # Derived parameters
         T0 = T0 / (2 * np.sqrt(1 + np.log(np.sqrt(2))))  # pulse 1/e width [s]
         v = self.c / ng          # group velocity
-        if not TN:
+        if TN is None:
             TN = 1 / (g * P0 * v) * scale_factor  # scaled nonlinear time
-        if not TD:
+        if TD is None:
             TD = (T0 * v)**2 / (b2 * v**3) * scale_factor  # scaled dispersion time
 
-        dt = self.dz
+        self.dt = self.dz
         # number of points in time (final time=dt*tf)
-        tf = np.rint(L / (v * dt) * scale_factor).astype(int)
+        self.tf = np.rint(L / (v * self.dt) * scale_factor).astype(int)
 
         # Set up k-space grid
         xx, yy = np.meshgrid(self.ks, self.ks) / self.dk
@@ -76,10 +76,10 @@ class qss:
         # Perform Evolution
         if not loss:
             u, M, N = P_no_loss(u, TD, TN, self.dz, self.kk, self.ks,
-                                self.dk, im, ip, tf, dt, self.n)
+                                self.dk, im, ip, self.tf, self.dt, self.n)
         else:
             u, M, N = P_loss(u, TD, TN, G, self.dz, self.kk, self.ks,
-                             self.dk, im, ip, tf, dt, self.n)
+                             self.dk, im, ip, self.tf, self.dt, self.n)
         return u, M, N
 
     def plot_m(self, M):
