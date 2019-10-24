@@ -51,6 +51,7 @@ class qss:
         # Set default mean-field in z-space
         if u is None:
             u = gaussian(self.zz)
+            T0 = T0 / (2 * np.sqrt(np.log(2)))  # pulse 1/e width [s]
         if len(u) != self.n:
             raise ValueError(f"Pump shape function is not length {self.n}.")
 
