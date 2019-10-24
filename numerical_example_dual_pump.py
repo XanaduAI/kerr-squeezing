@@ -14,7 +14,7 @@
 """
 Numerical example dual pump
 ===========================
-This code generates .npz files containing the mean field and phase 
+This code generates .npz files containing the mean field and phase
 sensitive and phase insensitive moments and their k discretization.
 To use it type in the terminal
 
@@ -33,9 +33,8 @@ y = 1000
 
 import sys
 import numpy as np
-from kerrlib import P_no_loss, myfft
-
-# pylint: disable=invalid-name
+from QSS import qss
+from kerrlib import myfft
 
 
 # The following lines provide a convenient function to evaluate the Fourier transform
@@ -45,57 +44,33 @@ valsxy = np.load("zfourierexp-z4.npy")
 func = lambda x0: np.interp(x0, valsxy[0], valsxy[1], left=0.0, right=0.0)
 
 
-c = 299792458  # speed of light [m/s]
 L = 0.014  # length of waveguide [m]
+G = 0  # loss rate [Hz]
 T0 = 796 * 10 ** -15  # pulse FWHM [s]
-v = c / 4.27  # group velocity
-b2 = -13.62 * 10 ** -24  # group velocity dispersion [s^2/m]
-
-
 P0 = float(sys.argv[1])  # input power [W]
+ng = 4.27  # group index
+b2 = -13.62 * 10 ** -24  # group velocity dispersion [s^2/m]
 g = 97  # nonlinear parameter [/m/W]
 
-
-Z0 = T0 * v
-
 scale_factor = 80 * 10 ** 10
-
-TN = 1 / (g * P0 * v) * scale_factor  # scaled nonlinear time
-
-TD = Z0 ** 2 / (b2 * v ** 3) * scale_factor  # scaled dispersion time
 
 n = int(sys.argv[2])  # number of points in real-space array
 zf = 30 * 2  # end points (-zf,+zf) of real-space array
 
-# Set up z- and k-space arrays
-zz = np.linspace(-zf, zf, n)
-dz = zz[1] - zz[0]
-kk = np.fft.fftfreq(n, d=dz) * (2.0 * np.pi)
-ks = np.fft.fftshift(kk)
-dk = kk[1] - kk[0]
-dt = dz
-tf = np.rint(L / (v * dt) * scale_factor).astype(
-    int
-)  # number of points in time (final time=dt*tf)
-
-xx, yy = np.meshgrid(ks, ks) / dk
-im = np.rint(xx - yy) + (n - 1) / 2
-ip = np.rint(xx + yy) + (n - 1) / 2
-im = np.clip(im, 0, n - 1).astype(int)
-ip = np.clip(ip, 0, n - 1).astype(int)
+solver = qss(zf, n)
 
 # Define mean-field in z-space
 # The cosine of 3*zz will give to peks 3 units away in k space
-u = func(zz) * np.cos(3 * zz)
+u = func(solver.zz) * np.cos(3 * solver.zz)
 
 
 # Perform Evolution
-u, M, N = P_no_loss(u, TD, TN, dz, kk, ks, dk, im, ip, tf, dt, n)
+u, M, N = solver.evolution(L, G, T0, P0, ng, b2, g, u=u, scale_factor=scale_factor)
 
 
 # Save final mean-field in and moments in k as well as k discretization.
 np.save("lsq_mmomentSc" + sys.argv[1] + "n" + sys.argv[2], M)
 np.save("lsq_nmomentSc" + sys.argv[1] + "n" + sys.argv[2], N)
-np.save("lsq_meanSc" + sys.argv[1] + "n" + sys.argv[2], myfft(u, dz))
-np.save("lsq_ksSc" + sys.argv[1] + "n" + sys.argv[2], ks)
-print(sys.argv, np.trace(N), tf, tf * dt)
+np.save("lsq_meanSc" + sys.argv[1] + "n" + sys.argv[2], myfft(u, solver.dz))
+np.save("lsq_ksSc" + sys.argv[1] + "n" + sys.argv[2], solver.ks)
+print(sys.argv, np.trace(N), solver.tf, solver.tf * solver.dt)
