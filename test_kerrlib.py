@@ -2,7 +2,7 @@ import pytest
 import numpy as np
 from scipy.signal import find_peaks
 from scipy.linalg import expm
-from kerrlib import gaussian, myfft, opD, opN, FWHM, A, B, Q, P_no_loss
+from kerrlib import gaussian, myfft, opD, opN, FWHM, R, S, Q, P_no_loss
 
 G = 0  # loss parameter
 
@@ -55,8 +55,10 @@ def test_nonlinearity():
     factor = 1
     n_steps = int(1000 / factor)
     dt = hz * factor
-    TN = n_steps * dt / (2.5*np.pi)  # nonlinear time corresponding to peak nonlinear phase shift of 2.5pi
-    TD = 5000  # large dispersion time such that propagation is effectively dispersionless
+    # nonlinear time corresponding to peak nonlinear phase shift of 2.5pi
+    TN = n_steps * dt / (2.5 * np.pi)
+    # large dispersion time such that propagation is effectively dispersionless
+    TD = 5000
 
     # Define mean-field in z-space and perform evolution for n_steps time steps
     U = gaussian(zz)
@@ -105,16 +107,16 @@ def test_nonlinearity_and_dispersion():
 
 
 def test_submatrices():
-    r"""Test submatrices of Q. A should be Hermitian and B should be symmetric."""
+    r"""Test submatrices of Q. R should be Hermitian and S should be symmetric."""
     U = gaussian(zz)
     TN = 4
     TD = 4
 
-    a = A(U, TD, TN, hz, kk, hk, im, n)
-    b = B(U, TN, hz, hk, ip)
+    r = R(U, TD, TN, hz, kk, hk, im, n)
+    s = S(U, TN, hz, hk, ip)
 
-    np.testing.assert_almost_equal(np.linalg.norm(a - a.conj().T), 0)
-    np.testing.assert_almost_equal(np.linalg.norm(b - b.T), 0)
+    np.testing.assert_almost_equal(np.linalg.norm(r - r.conj().T), 0)
+    np.testing.assert_almost_equal(np.linalg.norm(s - s.T), 0)
 
 
 def test_Q_matrix():
@@ -148,7 +150,8 @@ def test_propagation_submatrices():
         K = expm(1j * dt * Q(u, TD, TN, hz, ks, hk, im, ip, n)) @ K
     U = K[0:n, 0:n]
     W = K[0:n, n:2 * n]
-    np.testing.assert_almost_equal(np.linalg.norm(U @ (U.conj().T) - W @ (W.conj().T) - np.identity(n)), 0)
+    np.testing.assert_almost_equal(
+        np.linalg.norm(U @ (U.conj().T) - W @ (W.conj().T) - np.identity(n)), 0)
     np.testing.assert_almost_equal(np.linalg.norm(U @ (W.T) - W @ (U.T)), 0)
 
 
