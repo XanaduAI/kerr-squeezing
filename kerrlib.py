@@ -189,34 +189,34 @@ def P_mean_field(u, TD, TN, G, zz, dz, kk, N, dt):
 
 
 # Matrices For Fluctuation Evolution
-def s(u, TN, dz):
-    r""" Helper function to construct the S array for fluctuation propagation
+def cal_S(u, TN, dz):
+    r""" Constructs the \mathcal{S} array for fluctuation propagation
 
     Args:
         u (array): Mean field values evaluated on a real space grid of points
         TN (float): Nonlinear time
         dz (float): Size of discretization in real space
     Returns:
-        (array): S array
+        (array): cal_S array
     """
     return myfft(u ** 2, dz) / TN
 
 
-def m(u, TN, dz):
-    r""" Helper function to construct the M array for fluctuation propagation
+def cal_M(u, TN, dz):
+    r""" Constructs the \mathcal{M} array for fluctuation propagation
 
     Args:
         u (array): Mean field values evaluated on a real space grid of points
         TN (float): Nonlinear time
         dz (float): Size of discretization in real space
     Returns:
-        (array): S array
+        (array): cal_M array
     """
     return myfft(np.abs(u) ** 2, dz) / TN
 
 
-def A(u, TD, TN, dz, ks, dk, im, n):
-    r""" Construct the A matrix for fluctuation propagation
+def R(u, TD, TN, dz, ks, dk, im, n):
+    r""" Constructs the R matrix for fluctuation propagation
 
     Args:
         u (array): Mean field values evaluated on a real space grid of points
@@ -229,15 +229,15 @@ def A(u, TD, TN, dz, ks, dk, im, n):
           with i-j (clipped to be between 0 and n-1 so as not to fall off the grid).
         n (int): Size of the output matrix A
     Returns:
-        (array): A matrix
+        (array): R matrix
     """
-    mk = m(u, TN, dz)
+    Mk = cal_M(u, TN, dz)
     D = np.diag(np.full(n, ks ** 2 / (2.0 * TD)))
-    return D + 2.0 * dk * mk[im] / np.sqrt(2.0 * np.pi)
+    return D + 2.0 * dk * Mk[im] / np.sqrt(2.0 * np.pi)
 
 
-def B(u, TN, dz, dk, ip):
-    r""" Construct the B matrix for fluctuation propagation
+def S(u, TN, dz, dk, ip):
+    r""" Constructs the S matrix for fluctuation propagation
 
     Args:
         u (array): Mean field values evaluated on a real space grid of points
@@ -248,10 +248,10 @@ def B(u, TN, dz, dk, ip):
           with i+j (clipped to be between 0 and n-1 so as not to fall off the grid).
 
     Returns:
-        (array): B array
+        (array): S matrix
     """
-    sk = s(u, TN, dz)
-    return dk * sk[ip] / np.sqrt(2.0 * np.pi)
+    Sk = cal_S(u, TN, dz)
+    return dk * Sk[ip] / np.sqrt(2.0 * np.pi)
 
 
 def Q(u, TD, TN, dz, ks, dk, im, ip, n):
@@ -273,9 +273,9 @@ def Q(u, TD, TN, dz, ks, dk, im, ip, n):
     Returns:
         (array): Q matrix
     """
-    a = A(u, TD, TN, dz, ks, dk, im, n)
-    b = B(u, TN, dz, dk, ip)
-    return np.block([[a, b], [-b.conj().T, -a.conj()]])
+    r = R(u, TD, TN, dz, ks, dk, im, n)
+    s = S(u, TN, dz, dk, ip)
+    return np.block([[r, s], [-s.conj().T, -r.conj()]])
 
 
 # Lossless Propagation
