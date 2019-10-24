@@ -55,7 +55,6 @@ class qss:
             raise ValueError(f"Pump shape function is not length {self.n}.")
 
         # Derived parameters
-        T0 = T0 / (2 * np.sqrt(1 + np.log(np.sqrt(2))))  # pulse 1/e width [s]
         v = self.c / ng          # group velocity
         if TN is None:
             TN = 1 / (g * P0 * v) * scale_factor  # scaled nonlinear time
