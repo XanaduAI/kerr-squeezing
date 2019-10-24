@@ -91,20 +91,17 @@ class qss:
         plt.matshow(np.abs(M)**2, origin="lower")
         plt.show()
 
-    def plot_evolution(self, u_ev, myfunc='gaussian'):
+    def plot_evolution(self, u_ev, u=None):
         r"""Plots evolution of mean field in real and reciprocal space.
 
         Args:
             u_ev (float(n)): Evolved mean field.
-            myfunc (str): Name of pump function shape. Must be one of 'gaussian', 'rect', 'sech', or
-              'lorentzian'.
+            u (array): Mean field in z-space.
         """
-        try:
-            u = self.func_dict.get(str(myfunc))(self.zz)
-        except TypeError:
-            print("Invalid pump function shape given."
-                  "Please input one of 'gaussian', 'rect', 'sech', or 'lorentzian'.")
-            return -1
+        if u is None:
+            u = gaussian(self.zz)
+        if len(u) != self.n:
+            raise ValueError(f"Pump shape function is not length {self.n}.")
         fig, (ax1, ax2) = plt.subplots(1, 2)
         ax1.set_xlim(-self.zf, self.zf)
         ax1.plot(self.zz, np.abs(u)**2)
