@@ -1,6 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from kerrlib import P_loss, P_no_loss, gaussian, myfft
+from kerrlib import P_loss, P_no_loss, gaussian, rect, sech, lorentzian, myfft
 
 
 class qss:
@@ -37,7 +37,9 @@ class qss:
             ng (float): Group index.
             b2 (float): Group velocity dispersion [s^2/m].
             g (float): Nonlinear parameter [/m/W].
-            u (array): Mean field in z-space
+            u (string or array): Mean field in z-space. Can be one of the strings {"Gaussian",
+              "Rect", "Sech", "Lorentzian"} or a user specified array. Note that each requires
+              its own conversion from FWHM duration to "unit width" duration.
             loss (bool): Toggle for lossless vs lossy evolution.
             TN (float): Nonlinear time [s*10^-10]. Derived parameter unless specified here.
             TD (float): Diserpsion time [s*10^-10]. Derived parameter unless specified here.
@@ -52,6 +54,20 @@ class qss:
         if u is None:
             u = gaussian(self.zz)
             T0 = T0 / (2 * np.sqrt(np.log(2)))  # pulse 1/e width [s]
+        # Enable user to speficy any of the four built-in functions, or their own
+        if type(u) is str:
+            if u == "Gaussian":
+                u = gaussian(self.zz)
+                T0 = T0 / (2 * np.sqrt(np.log(2)))  # pulse 1/e width [s]
+            elif u == "Rect":
+                u = rect(self.zz)
+            elif u == "Sech":
+                u = sech(self.zz)
+                T0 = T0 / (2 * np.sqrt(1 + np.log(np.sqrt(2))))
+            elif u == "Lorentzian":
+                u = lorentzian(self.zz)
+            else:
+                raise ValueError(f"{u} is not a valid pump shape.")
         if len(u) != self.n:
             raise ValueError(f"Pump shape function is not length {self.n}.")
 
