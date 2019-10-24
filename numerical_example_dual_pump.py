@@ -26,7 +26,7 @@ python numerical_example_dual_pump.py x y
 
 where x is the relative strength of the pump and y is the number of
 grid points. For the results presented in the paper we used
-x = 0.1, 1.4
+x = 0.0723, 1.012
 y = 1000
 """
 
