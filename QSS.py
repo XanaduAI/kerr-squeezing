@@ -1,6 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from kerrlib import P_loss, P_no_loss, gaussian, rect, sech, lorentzian, myfft, FWHM
+from kerrlib import P_loss, P_no_loss, gaussian, rect, sech, lorentzian, myfft
 
 
 class qss:
@@ -14,7 +14,10 @@ class qss:
         """
         # Constant parameters
         self.c = 299792458  # speed of light [m/s]
-        self.func_dict = {"gaussian": gaussian, "rect": rect, "sech": sech, "lorentzian": lorentzian}
+        self.func_dict = {"gaussian": gaussian,
+                          "rect": rect,
+                          "sech": sech,
+                          "lorentzian": lorentzian}
 
         # Set up z- and k-space arrays
         self.zf = zf
@@ -58,13 +61,15 @@ class qss:
             TD = (T0 * v)**2 / (b2 * v**3) * 10**10  # scaled dispersion time
 
         dt = self.dz
-        tf = np.rint(L / (v * dt) * 10**10).astype(int)  # number of points in time (final time=dt*tf)
+        # number of points in time (final time=dt*tf)
+        tf = np.rint(L / (v * dt) * 10**10).astype(int)
 
         # Define mean-field in z-space
         try:
             u = self.func_dict.get(str(myfunc))(self.zz)
-        except:
-            print("Invalid pump function shape given. Please input one of 'gaussian', 'rect', 'sech', or 'lorentzian'.")
+        except TypeError:
+            print("Invalid pump function shape given."
+                  " Please input one of 'gaussian', 'rect', 'sech', or 'lorentzian'.")
             return -1
 
         # Set up k-space grid
@@ -76,9 +81,11 @@ class qss:
 
         # Perform Evolution
         if not loss:
-            u, M, N = P_no_loss(u, TD, TN, self.dz, self.kk, self.ks, self.dk, im, ip, tf, dt, self.n)
+            u, M, N = P_no_loss(u, TD, TN, self.dz, self.kk, self.ks,
+                                self.dk, im, ip, tf, dt, self.n)
         else:
-            u, M, N = P_loss(u, TD, TN, G, self.dz, self.kk, self.ks, self.dk, im, ip, tf, dt, self.n)
+            u, M, N = P_loss(u, TD, TN, G, self.dz, self.kk, self.ks,
+                             self.dk, im, ip, tf, dt, self.n)
         return u, M, N
 
     def plot_m(self, M):
@@ -100,8 +107,9 @@ class qss:
         """
         try:
             u = self.func_dict.get(str(myfunc))(self.zz)
-        except:
-            print("Invalid pump function shape given. Please input one of 'gaussian', 'rect', 'sech', or 'lorentzian'.")
+        except TypeError:
+            print("Invalid pump function shape given."
+                  "Please input one of 'gaussian', 'rect', 'sech', or 'lorentzian'.")
             return -1
         fig, (ax1, ax2) = plt.subplots(1, 2)
         ax1.set_xlim(-self.zf, self.zf)
