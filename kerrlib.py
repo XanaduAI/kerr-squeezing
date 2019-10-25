@@ -21,8 +21,7 @@ and insensitive moments in a (linearized) Kerr medium and some extra utility fun
 
 import numpy as np
 from scipy.linalg import expm
-# pylint: disable=invalid-name
-# pylint: disable=too-many-arguments
+
 
 # Pulse Shapes
 def gaussian(z):
@@ -50,7 +49,7 @@ def sech(z):
     return 1.0 / (np.cosh(z))
 
 
-def rect(z, l=2 * np.sqrt(2 * np.log(2))):
+def rect(z, w=2 * np.sqrt(2 * np.log(2))):
     r"""Returns a Gaussian function in z
 
     Args:
@@ -61,7 +60,7 @@ def rect(z, l=2 * np.sqrt(2 * np.log(2))):
         (array): Output array, element-wise top hat function of z. This is a scalar if x is a
         scalar.
     """
-    return np.where(abs(z) <= 0.5 * l, 1, 0)
+    return np.where(abs(z) <= 0.5 * w, 1, 0)
 
 
 def lorentzian(z):
@@ -105,7 +104,6 @@ def myfft(z, dz):
     Returns:
         (array): The fourier transform of z=f(t)
     """
-    
     return np.fft.fftshift(np.fft.fft(z) * dz / np.sqrt(2.0 * np.pi))
 
 
@@ -191,34 +189,34 @@ def P_mean_field(u, TD, TN, G, zz, dz, kk, N, dt):
 
 
 # Matrices For Fluctuation Evolution
-def s(u, TN, dz):
-    r""" Helper function to construct the S array for fluctuation propagation
+def cal_S(u, TN, dz):
+    r""" Constructs the \mathcal{S} array for fluctuation propagation
 
     Args:
         u (array): Mean field values evaluated on a real space grid of points
         TN (float): Nonlinear time
         dz (float): Size of discretization in real space
     Returns:
-        (array): S array
+        (array): cal_S array
     """
     return myfft(u ** 2, dz) / TN
 
 
-def m(u, TN, dz):
-    r""" Helper function to construct the M array for fluctuation propagation
+def cal_M(u, TN, dz):
+    r""" Constructs the \mathcal{M} array for fluctuation propagation
 
     Args:
         u (array): Mean field values evaluated on a real space grid of points
         TN (float): Nonlinear time
         dz (float): Size of discretization in real space
     Returns:
-        (array): S array
+        (array): cal_M array
     """
     return myfft(np.abs(u) ** 2, dz) / TN
 
 
-def A(u, TD, TN, dz, ks, dk, im, n):
-    r""" Construct the A matrix for fluctuation propagation
+def R(u, TD, TN, dz, ks, dk, im, n):
+    r""" Constructs the R matrix for fluctuation propagation
 
     Args:
         u (array): Mean field values evaluated on a real space grid of points
@@ -231,15 +229,15 @@ def A(u, TD, TN, dz, ks, dk, im, n):
           with i-j (clipped to be between 0 and n-1 so as not to fall off the grid).
         n (int): Size of the output matrix A
     Returns:
-        (array): A matrix
+        (array): R matrix
     """
-    mk = m(u, TN, dz)
+    Mk = cal_M(u, TN, dz)
     D = np.diag(np.full(n, ks ** 2 / (2.0 * TD)))
-    return D + 2.0 * dk * mk[im] / np.sqrt(2.0 * np.pi)
+    return D + 2.0 * dk * Mk[im] / np.sqrt(2.0 * np.pi)
 
 
-def B(u, TN, dz, dk, ip):
-    r""" Construct the B matrix for fluctuation propagation
+def S(u, TN, dz, dk, ip):
+    r""" Constructs the S matrix for fluctuation propagation
 
     Args:
         u (array): Mean field values evaluated on a real space grid of points
@@ -250,10 +248,10 @@ def B(u, TN, dz, dk, ip):
           with i+j (clipped to be between 0 and n-1 so as not to fall off the grid).
 
     Returns:
-        (array): B array
+        (array): S matrix
     """
-    sk = s(u, TN, dz)
-    return dk * sk[ip] / np.sqrt(2.0 * np.pi)
+    Sk = cal_S(u, TN, dz)
+    return dk * Sk[ip] / np.sqrt(2.0 * np.pi)
 
 
 def Q(u, TD, TN, dz, ks, dk, im, ip, n):
@@ -275,9 +273,9 @@ def Q(u, TD, TN, dz, ks, dk, im, ip, n):
     Returns:
         (array): Q matrix
     """
-    a = A(u, TD, TN, dz, ks, dk, im, n)
-    b = B(u, TN, dz, dk, ip)
-    return np.block([[a, b], [-b.conj().T, -a.conj()]])
+    r = R(u, TD, TN, dz, ks, dk, im, n)
+    s = S(u, TN, dz, dk, ip)
+    return np.block([[r, s], [-s.conj().T, -r.conj()]])
 
 
 # Lossless Propagation
@@ -356,11 +354,11 @@ def P_loss(u, TD, TN, G, dz, kk, ks, dk, im, ip, tf, dt, n):
         M = U @ M @ (U.T) + W @ (M.conj()) @ (W.T) + W @ N @ (U.T) + U @ (N.T) @ (W.T) + U @ (W.T)
 
         N = (
-            W.conj() @ M @ (U.T)
-            + U.conj() @ (M.conj()) @ (W.T)
-            + U.conj() @ N @ (U.T)
-            + W.conj() @ (N.T) @ (W.T)
-            + W.conj() @ (W.T)
+            W.conj() @ M @ (U.T) +
+            U.conj() @ (M.conj()) @ (W.T) +
+            U.conj() @ N @ (U.T) +
+            W.conj() @ (N.T) @ (W.T) +
+            W.conj() @ (W.T)
         )
         M = (1 - G * dt) * M
         N = (1 - G * dt) * N
@@ -377,7 +375,9 @@ def expected_squeezing_g(n_phi):
     Returns:
         Associated squeezing in dB.
     """
-    return 10*np.log10(1 + 2 * n_phi**2 / np.sqrt(3) - (np.sqrt(2) * n_phi + 2 * np.sqrt(2) * n_phi**3 / 3) / np.sqrt(1 + 2 * n_phi**2 / 3))
+    return 10 * np.log10(1 + 2 * n_phi**2 / np.sqrt(3) -
+                         (np.sqrt(2) * n_phi + 2 * np.sqrt(2) * n_phi**3 / 3) /
+                         np.sqrt(1 + 2 * n_phi**2 / 3))
 
 
 def expected_squeezing_r(n_phi):
