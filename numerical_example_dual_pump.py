@@ -14,7 +14,7 @@
 """
 Numerical example dual pump
 ===========================
-This code generates .npz files containing the mean field and phase
+This code generates .npy files containing the mean field and phase
 sensitive and phase insensitive moments and their k discretization.
 To use it type in the terminal
 
@@ -26,7 +26,7 @@ python numerical_example_dual_pump.py x y
 
 where x is the relative strength of the pump and y is the number of
 grid points. For the results presented in the paper we used
-x = 0.052, 0.732
+x = 0.0523, 0.7322
 y = 1501
 """
 
