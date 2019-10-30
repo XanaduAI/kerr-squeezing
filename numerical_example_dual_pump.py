@@ -14,7 +14,7 @@
 """
 Numerical example dual pump
 ===========================
-This code generates .npz files containing the mean field and phase
+This code generates .npy files containing the mean field and phase
 sensitive and phase insensitive moments and their k discretization.
 To use it type in the terminal
 
