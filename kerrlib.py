@@ -378,3 +378,42 @@ def expected_squeezing_g(n_phi):
     return 10 * np.log10(1 + 2 * n_phi**2 / np.sqrt(3) -
                          (np.sqrt(2) * n_phi + 2 * np.sqrt(2) * n_phi**3 / 3) /
                          np.sqrt(1 + 2 * n_phi**2 / 3))
+
+
+def expected_squeezing_r(n_phi):
+    r"""Calculate expected squeezing for Rect pulse for lossless, dispersionless propagation,
+    with a maximum nonlinear phase shift of n_phi according to JOSA B 7, 30 (1990).
+    Args:
+        n_phi (float): Maximal nonlinear phase shift.
+    Returns:
+        Associated squeezing in dB.
+    """
+    return 10 * np.log10(1 + 2 * n_phi**2 -
+                         (2 * n_phi + 2 * n_phi**3) /
+                         np.sqrt(1 + n_phi**2))
+
+
+def expected_squeezing_s(n_phi):
+    r"""Calculate expected squeezing for Sech pulse for lossless, dispersionless propagation,
+    with a maximum nonlinear phase shift of n_phi according to JOSA B 7, 30 (1990).
+    Args:
+        n_phi (float): Maximal nonlinear phase shift.
+    Returns:
+        Associated squeezing in dB.
+    """
+    return 10 * np.log10(1 + 16 * n_phi**2 / 15 -
+                         (4 * n_phi / 3 + 64 * n_phi**3 / 75) /
+                         np.sqrt(1 + 16 * n_phi**2 / 25))
+
+
+def expected_squeezing_l(n_phi):
+    r"""Calculate expected squeezing for Lorentzian pulse for lossless, dispersionless propagation,
+    with a maximum nonlinear phase shift of n_phi according to JOSA B 7, 30 (1990).
+    Args:
+        n_phi (float): Maximal nonlinear phase shift.
+    Returns:
+        Associated squeezing in dB.
+    """
+    return 10 * np.log10(1 + 3 * n_phi**2 / 4 -
+                         (n_phi + 9 * n_phi**3 / 16) /
+                         np.sqrt(1 + 9 * n_phi**2 / 16))
