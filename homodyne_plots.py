@@ -24,7 +24,6 @@ python homodyne_plots.py
 """
 
 
-
 import numpy as np
 from kerrlib import (
     expected_squeezing_g,
@@ -68,7 +67,8 @@ for i, phi in enumerate(phis):
     phi, sq = solver.squeezing(u, M, N)
     ssq[i] = np.min(sq)
 
-zf = 40
+zf = 40  # For the Lorentzian pulse we need a wider window to be sure that it approaches
+# zero at the window edges
 solver = qss(zf, n)
 for i, phi in enumerate(phis):
     u, M, N = solver.evolution(
@@ -77,8 +77,8 @@ for i, phi in enumerate(phis):
     phi, sq = solver.squeezing(u, M, N)
     lsq[i] = np.min(sq)
 
-n = 1501  # For the rectangular pulse we have to use a lot more points, this partly related
-# to the Gibbs phenomenon for piecewise continuously differentiable functions.
+n = 1501  # For the rectangular pulse we have to use more points to maintain accuracy, this is
+# partly related to the Gibbs phenomenon for piecewise continuously differentiable functions.
 zf = 5
 solver = qss(zf, n)
 for i, phi in enumerate(phis):
