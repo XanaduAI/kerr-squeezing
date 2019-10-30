@@ -54,6 +54,7 @@ for i in range(totp):
 
     ax[i].set_ylabel(r"$\langle n_j \rangle $")
     fig.savefig("schmidt_occ.pdf")
+plt.close()
 
 ## Generating plot for the energy density in the fluctuations
 for i in range(totp):
@@ -68,6 +69,7 @@ plt.xlabel(r"$(k-k_p)/\Delta k$")
 plt.title(r"$\langle \delta b(k)^\dagger \delta b(k) \rangle$")
 plt.legend()
 plt.savefig("squeezed_energydensity.pdf")
+plt.close()
 
 
 ## Generating plot for the energy density in the mean
@@ -81,6 +83,7 @@ plt.ylabel(r"arb. units")
 plt.title(r"$|\langle b(k) \rangle|^2$")
 plt.legend()
 plt.savefig("mean_energydensity.pdf")
+plt.close()
 
 
 ## Generating plot for the joint spectral amplitude
@@ -96,3 +99,4 @@ for i in range(totp):
         ax[i].set_ylabel(r"$(k'-k_p)/\Delta k$")
     ax[i].set_title(r"$J(k,k')$")
     fig.savefig("jsas.pdf")
+plt.close()

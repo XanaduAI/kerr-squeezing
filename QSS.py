@@ -1,6 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from kerrlib import P_loss, P_no_loss, gaussian, rect, sech, lorentzian, myfft, FWHM
+from kerrlib import P_loss, P_no_loss, gaussian, rect, sech, lorentzian, myfft
 
 
 class qss:
@@ -14,7 +14,6 @@ class qss:
         """
         # Constant parameters
         self.c = 299792458  # speed of light [m/s]
-        self.func_dict = {"gaussian": gaussian, "rect": rect, "sech": sech, "lorentzian": lorentzian}
 
         # Set up z- and k-space arrays
         self.zf = zf
@@ -25,7 +24,8 @@ class qss:
         self.ks = np.fft.fftshift(self.kk)
         self.dk = self.kk[1] - self.kk[0]
 
-    def evolution(self, L, G, T0, P0, ng, b2, g, myfunc="gaussian", loss=False, TN=None, TD=None):
+    def evolution(self, L, G, T0, P0, ng, b2, g,
+                  u=None, loss=False, TN=None, TD=None, scale_factor=10**10):
         r"""Evolves mean field through nonlinear channel waveguide, returning evolved field as well
           as N and M moments.
 
@@ -37,8 +37,9 @@ class qss:
             ng (float): Group index.
             b2 (float): Group velocity dispersion [s^2/m].
             g (float): Nonlinear parameter [/m/W].
-            myfunc (str): Name of pump function shape. Must be one of 'gaussian', 'rect', 'sech', or
-              'lorentzian'.
+            u (string or array): Mean field in z-space. Can be one of the strings {"Gaussian",
+              "Rect", "Sech", "Lorentzian"} or a user specified array. Note that each requires
+              its own conversion from FWHM duration to "unit width" duration.
             loss (bool): Toggle for lossless vs lossy evolution.
             TN (float): Nonlinear time [s*10^-10]. Derived parameter unless specified here.
             TD (float): Diserpsion time [s*10^-10]. Derived parameter unless specified here.
@@ -49,23 +50,37 @@ class qss:
             N (float(n,n)): N moment.
         """
 
+        # Set default mean-field in z-space
+        if u is None:
+            u = gaussian(self.zz)
+            T0 = T0 / (2 * np.sqrt(np.log(2)))  # pulse 1/e width [s]
+        # Enable user to speficy any of the four built-in functions, or their own
+        if type(u) is str:
+            if u == "Gaussian":
+                u = gaussian(self.zz)
+                T0 = T0 / (2 * np.sqrt(np.log(2)))  # pulse 1/e width [s]
+            elif u == "Rect":
+                u = rect(self.zz)
+            elif u == "Sech":
+                u = sech(self.zz)
+                T0 = T0 / (2 * np.sqrt(1 + np.log(np.sqrt(2))))
+            elif u == "Lorentzian":
+                u = lorentzian(self.zz)
+            else:
+                raise ValueError(f"{u} is not a valid pump shape.")
+        if len(u) != self.n:
+            raise ValueError(f"Pump shape function is not length {self.n}.")
+
         # Derived parameters
-        T0 = T0 / (2 * np.sqrt(1 + np.log(np.sqrt(2))))  # pulse 1/e width [s]
         v = self.c / ng          # group velocity
-        if not TN:
-            TN = 1 / (g * P0 * v) * 10**10  # scaled nonlinear time
-        if not TD:
-            TD = (T0 * v)**2 / (b2 * v**3) * 10**10  # scaled dispersion time
+        if TN is None:
+            TN = 1 / (g * P0 * v) * scale_factor  # scaled nonlinear time
+        if TD is None:
+            TD = (T0 * v)**2 / (b2 * v**3) * scale_factor  # scaled dispersion time
 
-        dt = self.dz
-        tf = np.rint(L / (v * dt) * 10**10).astype(int)  # number of points in time (final time=dt*tf)
-
-        # Define mean-field in z-space
-        try:
-            u = self.func_dict.get(str(myfunc))(self.zz)
-        except:
-            print("Invalid pump function shape given. Please input one of 'gaussian', 'rect', 'sech', or 'lorentzian'.")
-            return -1
+        self.dt = self.dz
+        # number of points in time (final time=dt*tf)
+        self.tf = np.rint(L / (v * self.dt) * scale_factor).astype(int)
 
         # Set up k-space grid
         xx, yy = np.meshgrid(self.ks, self.ks) / self.dk
@@ -76,9 +91,11 @@ class qss:
 
         # Perform Evolution
         if not loss:
-            u, M, N = P_no_loss(u, TD, TN, self.dz, self.kk, self.ks, self.dk, im, ip, tf, dt, self.n)
+            u, M, N = P_no_loss(u, TD, TN, self.dz, self.kk, self.ks,
+                                self.dk, im, ip, self.tf, self.dt, self.n)
         else:
-            u, M, N = P_loss(u, TD, TN, G, self.dz, self.kk, self.ks, self.dk, im, ip, tf, dt, self.n)
+            u, M, N = P_loss(u, TD, TN, G, self.dz, self.kk, self.ks,
+                             self.dk, im, ip, self.tf, self.dt, self.n)
         return u, M, N
 
     def plot_m(self, M):
@@ -90,19 +107,17 @@ class qss:
         plt.matshow(np.abs(M)**2, origin="lower")
         plt.show()
 
-    def plot_evolution(self, u_ev, myfunc='gaussian'):
+    def plot_evolution(self, u_ev, u=None):
         r"""Plots evolution of mean field in real and reciprocal space.
 
         Args:
             u_ev (float(n)): Evolved mean field.
-            myfunc (str): Name of pump function shape. Must be one of 'gaussian', 'rect', 'sech', or
-              'lorentzian'.
+            u (array): Mean field in z-space.
         """
-        try:
-            u = self.func_dict.get(str(myfunc))(self.zz)
-        except:
-            print("Invalid pump function shape given. Please input one of 'gaussian', 'rect', 'sech', or 'lorentzian'.")
-            return -1
+        if u is None:
+            u = gaussian(self.zz)
+        if len(u) != self.n:
+            raise ValueError(f"Pump shape function is not length {self.n}.")
         fig, (ax1, ax2) = plt.subplots(1, 2)
         ax1.set_xlim(-self.zf, self.zf)
         ax1.plot(self.zz, np.abs(u)**2)
