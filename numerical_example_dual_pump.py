@@ -38,7 +38,7 @@ from kerrlib import myfft
 
 
 # The following lines provide a convenient function to evaluate the Fourier transform
-# of the function f(z) = \exp(-z**4) by loading precalculated values and the using the
+# of the function f(z) = \exp(-z**4) by loading precalculated values and then using the
 # interpolation capabilities of numpy
 valsxy = np.load("zfourierexp-z4.npy")
 func = lambda x0: np.interp(x0, valsxy[0], valsxy[1], left=0.0, right=0.0)
